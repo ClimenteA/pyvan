@@ -1,5 +1,5 @@
 # pyvan
-IN PROGRESS - pack/freeze your scripts into runnable applications 
+IN PROGRESS - pack/freeze your scripts into runnable applications, in order to easly distribute python applications
 
 ## SUMMARY
 <br>
