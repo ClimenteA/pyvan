@@ -1,14 +1,14 @@
 # pypacker
 IN PROGRESS - pack/freeze your scripts into runnable applications 
 
-<br>
-
 ## SUMMARY
 <br>
 This indends to be an alternative to the limited choises of freezing python applications and distribute them to other PC's without python installed.
 
 <br>
+
 ## TODO
+
 <br>
 
 - [ ] detect needed python version and modules necessary to run the created script/s 
@@ -25,6 +25,9 @@ if sys.executable.endswith("pythonw.exe"):
   sys.stdout = open(os.devnull, "w");
   sys.stderr = open(os.path.join(os.getenv("TEMP"), "stderr-"+os.path.basename(sys.argv[0])), "w")
 ```
-- [ ] create a .bat file which will link the python.exe or pythonw.exe to the main.py file
+- [ ] create a .bat file which will link the python.exe or pythonw.exe to the main.py file, bellow batch command:
+```
+START pythonw main.py
+```
 - [ ] convert the .bat file to .exe and set it with a icon
 
