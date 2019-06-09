@@ -1,3 +1,31 @@
+from datetime import datetime
+import traceback
+
+
+def write_traceback(err):
+    """Write the error on a error txt file show the traceback of the error"""
+    err_time = str(datetime.now()) #'2011-05-03 17:45:35.177000'
+    tb_error_msg = traceback.format_exc()
+    errormessage = "###########\n{}\nERROR:\n{}\n\nDetails:\n{}\n###########\n\n\n".format(err_time, err, tb_error_msg)
+    
+    with open("ERRORS.txt", "a") as errfile:
+        errfile.write(errormessage)
+    
+    return errormessage
+
+
+
+def build(build_options):
+    print(build_options)
+    
+
+
+# Make a requirements.txt file for the curent folder
+# os.system("pipreqs --use-local .")
+
+# Install the requirements
+# os.system("pip install -r requirements.txt")
+
 # import urllib.request
 
 # # Copy get_pip.py
