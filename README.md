@@ -2,17 +2,22 @@
 IN PROGRESS - pack/freeze your scripts into runnable applications 
 
 <br>
+
 ## SUMMARY
 <br>
 This indends to be an alternative to the limited choises of freezing python applications and distribute them to other PC's without python installed.
+
+<br>
 ## TODO
 <br>
+
 - [ ] detect needed python version and modules necessary to run the created script/s 
 - [ ] download the embeded python version and delete from it pythonxy._pth file
 - [ ] fetch get_pip.py file from the web and install it 
 - [ ] install necessary modules using pip based on requirements.txt or pipenv file
 - [ ] insert bellow code to the main.py file 
 <br>
+
 ```
 # Needed to run with no-console
 import sys, os
