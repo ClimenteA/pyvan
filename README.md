@@ -29,5 +29,5 @@ if sys.executable.endswith("pythonw.exe"):
 ```
 START pythonw main.py
 ```
-- [ ] convert the .bat file to .exe and set it with a icon
+- [ ] convert the .bat file to .exe and set an icon
 
