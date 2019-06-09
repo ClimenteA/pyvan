@@ -1,4 +1,4 @@
-# pypacker
+# noe
 IN PROGRESS - pack/freeze your scripts into runnable applications 
 
 ## SUMMARY
