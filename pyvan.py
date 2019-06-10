@@ -2,20 +2,26 @@ from datetime import datetime
 import traceback
 
 import zipfile
+import subprocess as sps
 import os, shutil
 
 import urllib.request
 
 
-def write_traceback(err):
+
+
+DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
+
+def show_traceback(err):
     """Write the error on a error txt file show the traceback of the error"""
     err_time = str(datetime.now()) #'2011-05-03 17:45:35.177000'
     tb_error_msg = traceback.format_exc()
     errormessage = "###########\n{}\nERROR:\n{}\n\nDetails:\n{}\n###########\n\n\n".format(err_time, err, tb_error_msg)
     
-    with open("ERRORS.txt", "a") as errfile:
-        errfile.write(errormessage)
-    
+    # with open("ERRORS.txt", "a") as errfile:
+    #     errfile.write(errormessage)
+    print(errormessage)
+
     return errormessage
 
 
@@ -24,20 +30,22 @@ def prepare_dist(options):
         Create the 'dist' folder where the app will be bundled
         Gather needed imports into a requirements.txt file
     """
-    try:
-        print("Making 'dist' folder")
-        os.mkdir("dist")
-    except:
-        print("Folder 'dist' already exists!")
-
+    
+    print("Copying static files..")
+    src = os.getcwd()
+    dst = os.path.join(src, "dist")
+    shutil.copytree(src, dst)
+    print("Done!")
 
     if options["use_pipreqs"]:
-        print("Using 'pipreqs' for a minimal bundle")
-        os.system("pipreqs --use-local .")
+        print("Searching modules needed using 'pipreqs'...")
+        sps.Popen(["pipreqs", "."], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
+        # os.system("pipreqs --use-local .")
         shutil.move('requirements.txt', 'dist/requirements.txt')
     else:
-        print("Using 'pip freeze' to gather all modules")
-        os.system("pip freeze > requirements.txt")
+        print("Searching modules needed using 'pip freeze'...")
+        sps.Popen(["pip", "freeze", ">", "requirements.txt"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
+        # os.system("pip freeze > requirements.txt")
         shutil.move('requirements.txt', 'dist/requirements.txt')
 
     
@@ -72,6 +80,10 @@ def get_files_from_url(url, dst):
         Copy the file from the url specified to the dst specified
     """
 
+    if os.path.isfile(dst):
+        print("Using already copied file", dst)
+        return
+
     print("Copying data from ", url, " ..")
 
     headers = {}
@@ -86,122 +98,85 @@ def get_files_from_url(url, dst):
 
     url_connect.close()
 
-    print("Succesfully copied to ", dst)
+    print("Succesfully copied to Downloads!")
 
 
-def prepare_zip(dist_name, options):
+def prepare_zip():
     """
         Extracting python embeded zip 
     """
     print("Extracting .zip file..")
     
-    os.mkdir(dist_name)
-
-    zip_ref = zipfile.ZipFile('dist/embeded_python.zip', 'r')
-    zip_ref.extractall(dist_name)
+    zip_ref = zipfile.ZipFile(os.path.join(DOWNLOADS_PATH, 'embeded_python.zip'), 'r')
+    zip_ref.extractall('./dist')
     zip_ref.close()
-    print("Files extracted to ", dist_name)
+    print("Done!")
 
-    os.remove(os.path.join(dist_name, "python37._pth"))
+    os.remove("./dist/python37._pth")
     print("Removed 'python37._pth' file")
 
-    shutil.copy2('dist/get_pip.py', os.path.join(dist_name, 'get_pip.py'))
-    print("Copied get_pip.py to extracted zip")
-
-    return dist_name
+    shutil.copy2(os.path.join(DOWNLOADS_PATH, 'get_pip.py'), './dist/get_pip.py')
+    print("Copied get_pip.py to './dist'")
 
 
-def get_modules(dist_name, modules_to_install, options):
+def get_modules(modules_to_install):
     """
         Install all needed modules
     """
     
-    os.chdir("{}".format(dist_name))
+    # sps.Popen(["cd dist"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
+    os.chdir('./dist')
 
-    # Install get_pip.py in the extracted folder
+    # Install get_pip.py in the dist folder
+    # sps.Popen(["get_pip.py"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
     os.system("get_pip.py")
+    
+    # sps.Popen(["cd", "Scripts"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
     os.chdir("Scripts")
-
+   
     for module in modules_to_install:
-        os.system("pip install {}".format(module))
+        print("Installing ", module)
+        p = sps.Popen(["pip", "install", module], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE)
+        p.wait()
+        # os.system("pip install {}".format(module))
+        print("Done!")
 
     print("\nFinished installing dependencies!")
 
 
 
-
-def copy_dirs(src, dst, symlinks=False, ignore=None):
-    """Copy dirs and it's items from src to dst"""
-
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            copy_dirs(s, d, symlinks, ignore)
-        else:
-            if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
-                shutil.copy2(s, d)
-
-
-
-def get_files(root_path="./"):
-    """Walk thru a start path and return a list of paths to files"""
-
-    allfiles = []
-    for root, _, files in os.walk(root_path):
-        for f in files:
-            path_tofile = os.path.join(root, f)
-            if "\\dist" in path_tofile or "\\__pycache__" in path_tofile or "\\.ipynb_checkpoints" in path_tofile or '\\van.py' in path_tofile:
-                continue
-            allfiles.append(path_tofile)
-    
-    return allfiles
-
-
-
-def prepare_main(dist_name, options):
+def prepare_main(options):
     """
         Prepare main entry point of the app by copying all needed files to 
         the extracted embeded python folder and creating a .bat file which will run the script
     """
 
-    static_files = get_files()
-
-    exename = dist_name.replace("dist/", "")
-
-    for static_file in static_files:
-        src = static_file
-        dst = os.path.join("./dist/{}".format(exename), static_file)
-
-        copy_dirs(src, dst)
-
-    
-
-    # if options["show_console"]:
-    #     bat_command = "START python {}.py".format(exename)
-    # else:
-    #     with open("main.py", 'r') as p:
-    #         out = p.read().splitlines()
+    if options["show_console"]:
+        bat_command = "START python " + options["main_file_name"]
+    else:
+        with open(options["main_file_name"], 'r') as p:
+            out = p.read().splitlines()
             
-    #     no_console_hack = ['import sys, os',
-    #                         "if sys.executable.endswith('pythonw.exe'):",
-    #                         "  sys.stdout = open(os.devnull, 'w')",
-    #                         '  sys.stderr = open(os.path.join(os.getenv(\'TEMP\'), \'stderr-{}\'.format(os.path.basename(sys.argv[0]))), "w")',
-    #                         '']
+        no_console_hack = ['import sys, os',
+                            "if sys.executable.endswith('pythonw.exe'):",
+                            "  sys.stdout = open(os.devnull, 'w')",
+                            '  sys.stderr = open(os.path.join(os.getenv(\'TEMP\'), \'stderr-{}\'.format(os.path.basename(sys.argv[0]))), "w")',
+                            '']
                    
-    #     file_with_hack = no_console_hack + out
+        file_with_hack = no_console_hack + out
 
-    #     with open("{}.py".format(exename), "w") as m:    
-    #         for line in file_with_hack:
-    #             m.write(line)
-    #             m.write("\n")
-    #             bat_command = "START pythonw {}.py".format(exename)
+        with open(options["main_file_name"], "w") as m:    
+            for line in file_with_hack:
+                m.write(line)
+                m.write("\n")
+                bat_command = "START pythonw " + options["main_file_name"]
     
     
-    # with open(exename + ".bat", "w") as b:
-    #     b.write(bat_command)
+    os.chdir('..')
+    bat_path = os.path.join(os.getcwd(), options["main_file_name"].replace(".py", ".bat"))
+    
+    with open(bat_path, "w") as b:
+        b.write(bat_command)
 
     
 
@@ -209,28 +184,33 @@ def prepare_main(dist_name, options):
 
 def build(build_options):
 
-    # modules_to_install = prepare_dist(build_options)
+    if not os.path.isfile(build_options["main_file_name"]):
+        raise Exception("Entry point file(main_file_name) not found!")
 
-    # if "https://" in build_options["get_pip_location"]:
-    #     get_files_from_url(build_options["get_pip_location"], "dist/get_pip.py")
-    # else:
-    #     print("Copying get_pip.py to dist..")
-    #     shutil.copy2(build_options["get_pip_location"], "dist/get_pip.py")
-    #     print("Done!")
+    modules_to_install = prepare_dist(build_options)
 
-    # if "https://" in build_options["embeded_python_location"]:
-    #     get_files_from_url(build_options["embeded_python_location"], "dist/embeded_python.zip")
-    # else:
-    #     print("Copying {} to dist..".format(build_options["embeded_python_location"]))
-    #     shutil.copy2(build_options["embeded_python_location"], "dist/embeded_python.zip")
-    #     print("Done!")
+    if "https://" in build_options["get_pip_location"]:
+        get_files_from_url(build_options["get_pip_location"], os.path.join(DOWNLOADS_PATH, "get_pip.py"))
+    else:
+        print("Copying get_pip.py to dist..")
+        shutil.copy2(build_options["get_pip_location"], "dist/get_pip.py")
+        print("Done!")
+
+    if "https://" in build_options["embeded_python_location"]:
+        get_files_from_url(build_options["embeded_python_location"], os.path.join(DOWNLOADS_PATH, "embeded_python.zip"))
+    else:
+        print("Copying {} to dist..".format(build_options["embeded_python_location"]))
+        shutil.copy2(build_options["embeded_python_location"], "dist/embeded_python.zip")
+        print("Done!")
 
     dist_name = "dist/{}".format(build_options["main_file_name"].replace(".py", ""))
 
-    # prepare_zip(dist_name, build_options)
+    prepare_zip()
 
-    # get_modules(dist_name, modules_to_install, build_options)
+    get_modules(modules_to_install)
 
-    prepare_main(dist_name, build_options)
+    prepare_main(build_options)
+
+    input("\n\nFinished! Folder 'dist' contains your runnable application!\n\nPress enter to exit...\n\n")
 
 

@@ -37,6 +37,6 @@ try:
                 "embeded_python_location": "https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip",   
             })
 except Exception as err:
-    print(err)
-    input("Check 'ERRORS.txt' file!\nPress enter to exit..")
-    pyvan.write_traceback(err)
+    pyvan.show_traceback(err)
+    input("\nPress enter to exit..")
+
