@@ -25,11 +25,9 @@ pyvan.build parameters described
 
 """
 
-
-
 try:
     pyvan.build({"main_file_name": "main.py", 
-                "show_console": True,
+                "show_console": False,
                 "use_pipreqs": True,
                 "exclude_modules":[],
                 "include_modules":[],

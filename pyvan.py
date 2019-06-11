@@ -2,15 +2,23 @@ from datetime import datetime
 import traceback
 
 import zipfile
-import subprocess as sps
-import os, shutil
+import os, shutil, subprocess
 
 import urllib.request
 
 
+print("\npyvan - version 0.0.1\nDelivering your python apps to the people!\n\n")
 
 
 DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
+
+
+def run_cmd(command):
+    print("Running cmd: ", command)
+    subprocess.call(command, shell=True)
+    print("cmd executed")
+
+
 
 def show_traceback(err):
     """Write the error on a error txt file show the traceback of the error"""
@@ -18,11 +26,25 @@ def show_traceback(err):
     tb_error_msg = traceback.format_exc()
     errormessage = "###########\n{}\nERROR:\n{}\n\nDetails:\n{}\n###########\n\n\n".format(err_time, err, tb_error_msg)
     
-    # with open("ERRORS.txt", "a") as errfile:
-    #     errfile.write(errormessage)
     print(errormessage)
 
+    with open("ERRORS.txt", "a") as errfile:
+        errfile.write(errormessage)
+
     return errormessage
+
+
+
+def get_static():
+    try:
+        shutil.rmtree('./dist')
+    except:
+        pass
+    print("Copying static files..")
+    src = os.getcwd()
+    dst = os.path.join(src, "dist")
+    shutil.copytree(src, dst)
+    print("Done!")
 
 
 def prepare_dist(options):
@@ -30,23 +52,22 @@ def prepare_dist(options):
         Create the 'dist' folder where the app will be bundled
         Gather needed imports into a requirements.txt file
     """
-    
-    print("Copying static files..")
-    src = os.getcwd()
-    dst = os.path.join(src, "dist")
-    shutil.copytree(src, dst)
-    print("Done!")
+
+    get_static()
 
     if options["use_pipreqs"]:
         print("Searching modules needed using 'pipreqs'...")
-        sps.Popen(["pipreqs", "."], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
-        # os.system("pipreqs --use-local .")
+        cmd = "pipreqs . --force --ignore dist"
+        run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
+        
+        print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
-        sps.Popen(["pip", "freeze", ">", "requirements.txt"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
-        # os.system("pip freeze > requirements.txt")
+        cmd = "pip freeze > requirements.txt"
+        run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
+        print("Done!")
 
     
     print("Checking which modules to exclude or to keep")
@@ -124,23 +145,27 @@ def get_modules(modules_to_install):
         Install all needed modules
     """
     
-    # sps.Popen(["cd dist"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
-    os.chdir('./dist')
-
-    # Install get_pip.py in the dist folder
-    # sps.Popen(["get_pip.py"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
+    os.chdir("./dist")
+    print("CD to dist")
+    print("Running get_pip.py from ", os.getcwd())    
     os.system("get_pip.py")
     
-    # sps.Popen(["cd", "Scripts"], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE).wait()
-    os.chdir("Scripts")
-   
+    if not os.path.isdir("Scripts"):
+        raise Exception("ERROR: pip not installed!")
+
+    print("PIP installed!")
+    os.chdir("./Scripts")
+    print("CD to Scripts", os.getcwd())
+
     for module in modules_to_install:
-        print("Installing ", module)
-        p = sps.Popen(["pip", "install", module], stdout=sps.PIPE, stderr=sps.PIPE, stdin=sps.PIPE)
-        p.wait()
-        # os.system("pip install {}".format(module))
+        if module.endswith("info"):
+            continue
+        cmd = "pip install {} --no-cache-dir --no-warn-script-location".format(module) 
+        run_cmd(cmd)
         print("Done!")
 
+    os.chdir("..")
+    print("CD back to 'dist'")
     print("\nFinished installing dependencies!")
 
 
@@ -150,10 +175,13 @@ def prepare_main(options):
         Prepare main entry point of the app by copying all needed files to 
         the extracted embeded python folder and creating a .bat file which will run the script
     """
+    
+    print("Preparing .bat/ executable file in ", os.getcwd())
 
     if options["show_console"]:
         bat_command = "START python " + options["main_file_name"]
     else:
+        print("--noconsole ", os.getcwd())
         with open(options["main_file_name"], 'r') as p:
             out = p.read().splitlines()
             
@@ -171,8 +199,6 @@ def prepare_main(options):
                 m.write("\n")
                 bat_command = "START pythonw " + options["main_file_name"]
     
-    
-    os.chdir('..')
     bat_path = os.path.join(os.getcwd(), options["main_file_name"].replace(".py", ".bat"))
     
     with open(bat_path, "w") as b:
