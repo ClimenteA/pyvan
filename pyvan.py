@@ -9,8 +9,10 @@ import urllib.request
 
 print("\npyvan - version 0.0.1\nDelivering your python apps to the people!\n\n")
 
-
-DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
+if os.name == 'nt':
+    DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
+else:
+    DOWNLOADS_PATH = os.path.join(os.path.expanduser('~'), 'downloads')
 
 
 def run_cmd(command):
@@ -25,7 +27,7 @@ def show_traceback(err):
     err_time = str(datetime.now()) #'2011-05-03 17:45:35.177000'
     tb_error_msg = traceback.format_exc()
     errormessage = "###########\n{}\nERROR:\n{}\n\nDetails:\n{}\n###########\n\n\n".format(err_time, err, tb_error_msg)
-    
+
     print(errormessage)
 
     with open("ERRORS.txt", "a") as errfile:
@@ -60,29 +62,29 @@ def prepare_dist(options):
         cmd = "pipreqs . --force --ignore dist"
         run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
-        
+
         print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
-        cmd = "pip freeze > requirements.txt"
+        cmd = "pip3 freeze > requirements.txt"
         run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
         print("Done!")
 
-    
+
     print("Checking which modules to exclude or to keep")
 
     with open('dist/requirements.txt', 'r') as r:
         modules_to_install = r.read().splitlines()
 
     if options["exclude_modules"]:
-        modules_to_install = list(set.difference(set(modules_to_install), 
+        modules_to_install = list(set.difference(set(modules_to_install),
                                                  set(options["exclude_modules"]
                                                  )))
-    
+
     if options["include_modules"]:
         modules_to_install = modules_to_install + options["include_modules"]
-    
+
     print("Updating 'dist/requirements.txt' file")
     with open('dist/requirements.txt', 'w') as r:
         for module in modules_to_install:
@@ -124,10 +126,10 @@ def get_files_from_url(url, dst):
 
 def prepare_zip():
     """
-        Extracting python embeded zip 
+        Extracting python embeded zip
     """
     print("Extracting .zip file..")
-    
+
     zip_ref = zipfile.ZipFile(os.path.join(DOWNLOADS_PATH, 'embeded_python.zip'), 'r')
     zip_ref.extractall('./dist')
     zip_ref.close()
@@ -144,12 +146,12 @@ def get_modules(modules_to_install):
     """
         Install all needed modules
     """
-    
+
     os.chdir("./dist")
     print("CD to dist")
-    print("Running get_pip.py from ", os.getcwd())    
+    print("Running get_pip.py from ", os.getcwd())
     os.system("get_pip.py")
-    
+
     if not os.path.isdir("Scripts"):
         raise Exception("ERROR: pip not installed!")
 
@@ -160,7 +162,7 @@ def get_modules(modules_to_install):
     for module in modules_to_install:
         if module.endswith("info"):
             continue
-        cmd = "pip install {} --no-cache-dir --no-warn-script-location".format(module) 
+        cmd = "pip3 install {} --no-cache-dir --no-warn-script-location".format(module)
         run_cmd(cmd)
         print("Done!")
 
@@ -172,10 +174,10 @@ def get_modules(modules_to_install):
 
 def prepare_main(options):
     """
-        Prepare main entry point of the app by copying all needed files to 
+        Prepare main entry point of the app by copying all needed files to
         the extracted embeded python folder and creating a .bat file which will run the script
     """
-    
+
     print("Preparing .bat/ executable file in ", os.getcwd())
 
     if options["show_console"]:
@@ -184,27 +186,27 @@ def prepare_main(options):
         print("--noconsole ", os.getcwd())
         with open(options["main_file_name"], 'r') as p:
             out = p.read().splitlines()
-            
+
         no_console_hack = ['import sys, os',
                             "if sys.executable.endswith('pythonw.exe'):",
                             "  sys.stdout = open(os.devnull, 'w')",
                             '  sys.stderr = open(os.path.join(os.getenv(\'TEMP\'), \'stderr-{}\'.format(os.path.basename(sys.argv[0]))), "w")',
                             '']
-                   
+
         file_with_hack = no_console_hack + out
 
-        with open(options["main_file_name"], "w") as m:    
+        with open(options["main_file_name"], "w") as m:
             for line in file_with_hack:
                 m.write(line)
                 m.write("\n")
                 bat_command = "START pythonw " + options["main_file_name"]
-    
+
     bat_path = os.path.join(os.getcwd(), options["main_file_name"].replace(".py", ".bat"))
-    
+
     with open(bat_path, "w") as b:
         b.write(bat_command)
 
-    
+
 
 
 
@@ -238,5 +240,3 @@ def build(build_options):
     prepare_main(build_options)
 
     input("\n\nFinished! Folder 'dist' contains your runnable application!\n\nPress enter to exit...\n\n")
-
-
