@@ -1,33 +1,79 @@
 # pyvan
-IN PROGRESS - pack/freeze your scripts into runnable applications, in order to easly distribute python applications
+Make runnable desktop apps from your python scripts more easily with pyvan!
 
-## SUMMARY
+### Install
+```
+pip install pyvan
+```
+### Usage
+
+Make a "van.py" file next to the "main.py" file (entry point of your program) 
 <br>
-This indends to be an alternative to the limited choises of freezing python applications and distribute them to other PC's without python installed.
-
-<br>
-
-## TODO
-
-<br>
-
-- [ ] detect needed python version and modules necessary to run the created script/s 
-- [ ] download the embeded python version and delete from it pythonxy._pth file
-- [ ] fetch get_pip.py file from the web and install it 
-- [ ] install necessary modules using pip based on requirements.txt or pipenv file
-- [ ] insert bellow code to the main.py file 
-<br>
+Paste the code bellow:
 
 ```
-# Needed to run with no-console
-import sys, os
-if sys.executable.endswith("pythonw.exe"):
-  sys.stdout = open(os.devnull, "w");
-  sys.stderr = open(os.path.join(os.getenv("TEMP"), "stderr-"+os.path.basename(sys.argv[0])), "w")
+import pyvan 
+
+try:
+    pyvan.build({"main_file_name": "main.py", 
+                "show_console": False,
+                "use_pipreqs": True,
+                "exclude_modules":[],
+                "include_modules":[],
+                "get_pip_location": "https://bootstrap.pypa.io/get-pip.py",
+                "embeded_python_location": "https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip",   
+            })
+except Exception as err:
+    pyvan.show_traceback(err)
+    input("\nPress enter to exit..")
+ 
 ```
-- [ ] create a .bat file which will link the python.exe or pythonw.exe to the main.py file, bellow batch command:
-```
-START pythonw main.py
-```
-- [ ] convert the .bat file to .exe and set an icon
+
+### Configurations
+
+* "main_file_name": "main.py", ==> the entry point of the application
+
+* "show_console": True,        ==> show console window or not (for a service or GUI app)
+
+* "use_pipreqs": True,         ==> pipreqs tries to minimize the size of your app by looking at your imports 
+                                (best way is to use a virtualenv to ensure a smaller size)
+
+* "exclude_modules":[],        ==> modules to exclude from bundle 
+
+* "include_modules":[],        ==> modules to include in the bundle
+
+* "get_pip_location": "https://bootstrap.pypa.io/get-pip.py", ==> put the url, once the file is downloaded, pyvan will use the that downloaded file
+
+* "embeded_python_location": "https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip",  ==> put the url, once the file is downloaded, pyvan will use that downloaded file
+
+"icon_location": "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
+                            in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
+
+
+
+### Why pyvan?
+
+I used pyinstaller a lot.. but, many times, I got lots of issues.. 
+<br>
+**pyvan it's just one file which takes the embeded python version, installs the modules you used and makes a link using a .bat file between python(w).exe and your main.py script.
+<br>
+It's easy if something goes wrong for whatever reason you can just go in the dist folder and solve the issue the python way (because there is just python and your scripts :).
+<br>
+If you want and .exe instead of a .bat file you can convert your .bat file to .exe (even put an icon) using the tools you will find online.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
