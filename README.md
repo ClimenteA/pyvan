@@ -46,7 +46,7 @@ except Exception as err:
 
 * "embeded_python_location": "https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip",  ==> put the url, once the file is downloaded, pyvan will use that downloaded file
 
-"icon_location": "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
+* "icon_location": "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
                             in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
 
 
