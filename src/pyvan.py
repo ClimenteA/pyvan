@@ -1,13 +1,19 @@
+import time
 from datetime import datetime
 import traceback
 
 import zipfile
-import os, shutil, subprocess
-
 import urllib.request
+import os, sys, shutil, subprocess
+
+import shlex
+import subprocess
+from subprocess import Popen, PIPE
 
 
-print("\npyvan - version 0.0.1\nDelivering your python apps to the people!\n\n")
+
+
+print("\npyvan - version 0.0.2\nDelivering your python apps to the people!\n\n")
 
 if os.name == 'nt':
     DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
@@ -17,7 +23,28 @@ else:
 
 def run_cmd(command):
     print("Running cmd: ", command)
-    subprocess.call(command, shell=True)
+
+    cmd = command #shlex.split(command)
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    # Poll process for new output until finished
+    while True:
+        nextline = process.stdout.readline().decode('UTF-8')
+        if nextline == '' and process.poll() is not None:
+            break
+        sys.stdout.write(nextline)
+        sys.stdout.flush()
+
+    output = process.communicate()[0]
+    exitCode = process.returncode
+
+    if (exitCode == 0):
+        print(output)
+        return output
+    else:
+        raise Exception(command, exitCode, output)
+
+
     print("cmd executed")
 
 
@@ -36,6 +63,22 @@ def show_traceback(err):
     return errormessage
 
 
+def ENV_PATH(unset=True):
+    """
+        Delete all values from PATH environment variables
+        or update PATH environment variables
+    """
+    
+    _environ = os.environ.copy()
+    
+    if unset:
+        os.environ.clear()
+        return _environ # Make sure to KEEP THIS 
+    else:
+        os.environ.update(_environ)
+
+
+
 
 def get_static():
     try:
@@ -46,7 +89,7 @@ def get_static():
     src = os.getcwd()
     dst = os.path.join(src, "dist")
     shutil.copytree(src, dst)
-    print("Done!")
+    print("Static files colected!")
 
 
 def prepare_dist(options):
@@ -55,22 +98,18 @@ def prepare_dist(options):
         Gather needed imports into a requirements.txt file
     """
 
-    get_static()
-
     if options["use_pipreqs"]:
         print("Searching modules needed using 'pipreqs'...")
         cmd = "pipreqs . --force --ignore dist"
         run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
-
         print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
-        cmd = "pip3 freeze > requirements.txt"
+        cmd = "pip3.exe freeze > requirements.txt"
         run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
         print("Done!")
-
 
     print("Checking which modules to exclude or to keep")
 
@@ -85,10 +124,11 @@ def prepare_dist(options):
     if options["include_modules"]:
         modules_to_install = modules_to_install + options["include_modules"]
 
+    
     print("Updating 'dist/requirements.txt' file")
     with open('dist/requirements.txt', 'w') as r:
         for module in modules_to_install:
-            if module.endswith("info"):
+            if module.endswith("info") or module.startswith("pyvan"):
                 continue 
             if not module == modules_to_install[-1]:
                 r.write(str(module) + "\n")
@@ -130,15 +170,21 @@ def prepare_zip():
     """
         Extracting python embeded zip
     """
-    print("Extracting .zip file..")
 
+    print("Extracting .zip file..")
     zip_ref = zipfile.ZipFile(os.path.join(DOWNLOADS_PATH, 'embeded_python.zip'), 'r')
     zip_ref.extractall('./dist')
     zip_ref.close()
-    print("Done!")
+    print("Zip file extracted!")
 
-    os.remove("./dist/python37._pth")
-    print("Removed 'python37._pth' file")
+    time.sleep(1)
+    
+    with open("./dist/python37._pth", 'w') as f:
+        for line in ['python37.zip', '.', '' 'import site']:        
+            f.write(line)
+            f.write("\n")
+
+    print("Uncommented 'import site' line from 'python37._pth' file")
 
     shutil.copy2(os.path.join(DOWNLOADS_PATH, 'get_pip.py'), './dist/get_pip.py')
     print("Copied get_pip.py to './dist'")
@@ -151,8 +197,11 @@ def get_modules(modules_to_install):
 
     os.chdir("./dist")
     print("CD to dist")
+    
     print("Running get_pip.py from ", os.getcwd())
-    os.system("get_pip.py")
+
+    cmd = "python.exe get_pip.py"
+    run_cmd(cmd)
 
     if not os.path.isdir("Scripts"):
         raise Exception("ERROR: pip not installed!")
@@ -161,7 +210,7 @@ def get_modules(modules_to_install):
     os.chdir("./Scripts")
     print("CD to Scripts", os.getcwd())
 
-    cmd = "pip3 install -r ../requirements.txt --no-cache-dir --no-warn-script-location"
+    cmd = "pip3.exe install -r ../requirements.txt --no-cache-dir --no-warn-script-location"
     run_cmd(cmd)
     print("Done!")
 
@@ -213,6 +262,8 @@ def build(build_options):
 
     if not os.path.isfile(build_options["main_file_name"]):
         raise Exception("Entry point file(main_file_name) not found!")
+
+    get_static()
 
     modules_to_install = prepare_dist(build_options)
 
