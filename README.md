@@ -1,5 +1,5 @@
 # pyvan
-Make runnable desktop apps from your python scripts more easily with pyvan!
+#### Make runnable desktop apps from your python scripts more easily with pyvan!
 
 ### Install
 ```
