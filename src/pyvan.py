@@ -13,12 +13,15 @@ from subprocess import Popen, PIPE
 
 
 
-print("\npyvan - version 0.0.2\nDelivering your python apps to the people!\n\n")
+print("\npyvan - version 0.0.2\nMake runnable desktop apps from your python scripts more easily with pyvan!\n\n")
 
 if os.name == 'nt':
     DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
 else:
-    DOWNLOADS_PATH = os.path.join(os.path.expanduser('~'), 'downloads')
+    try:
+        DOWNLOADS_PATH = os.path.join(os.path.expanduser('~'), 'downloads')
+    except:
+        DOWNLOADS_PATH = os.getcwd()
 
 
 def run_cmd(command):
@@ -63,19 +66,21 @@ def show_traceback(err):
     return errormessage
 
 
-def ENV_PATH(unset=True):
-    """
-        Delete all values from PATH environment variables
-        or update PATH environment variables
-    """
+
+
+# def ENV_PATH(unset=True):
+#     """
+#         Delete all values from PATH environment variables
+#         or update PATH environment variables
+#     """
     
-    _environ = os.environ.copy()
+#     _environ = os.environ.copy()
     
-    if unset:
-        os.environ.clear()
-        return _environ # Make sure to KEEP THIS 
-    else:
-        os.environ.update(_environ)
+#     if unset:
+#         os.environ.clear()
+#         return _environ # Make sure to KEEP THIS 
+#     else:
+#         os.environ.update(_environ)
 
 
 
@@ -226,7 +231,7 @@ def prepare_main(options):
         the extracted embeded python folder and creating a .bat file which will run the script
     """
 
-    print("Preparing .bat/ executable file in ", os.getcwd())
+    print("\nPreparing .bat/ executable file in ", os.getcwd())
 
     if options["show_console"]:
         bat_command = "START python " + options["main_file_name"]
@@ -281,7 +286,7 @@ def build(build_options):
         shutil.copy2(build_options["embeded_python_location"], "dist/embeded_python.zip")
         print("Done!")
 
-    dist_name = "dist/{}".format(build_options["main_file_name"].replace(".py", ""))
+    # dist_name = "dist/{}".format(build_options["main_file_name"].replace(".py", ""))
 
     prepare_zip()
 
@@ -289,4 +294,4 @@ def build(build_options):
 
     prepare_main(build_options)
 
-    input("\n\nFinished! Folder 'dist' contains your runnable application!\n\nPress enter to exit...\n\n")
+    print("\n\nFinished! Folder 'dist' contains your runnable application!\n\n")
