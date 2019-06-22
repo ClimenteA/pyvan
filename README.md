@@ -57,7 +57,7 @@ except Exception as err:
 
 I used pyinstaller a lot.. but, many times, I got lots of issues.. 
 <br>
-**pyvan** it's just one file which takes the embeded python version, installs the modules you need and makes a link using a .bat file between python(w).exe and your main.py script.
+**pyvan** it's just one file which takes the embedded python version, installs the modules you need and makes a link using a .bat file between python(w).exe and your main.py script.
 <br>
 It's easy if something goes wrong for whatever reason you can just go in the dist folder and solve the issue the python way (because there is just python and your scripts :).
 <br>
