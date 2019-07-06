@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 
 setup (
 	name="pyvan",
-	version="0.0.2",
+	version="0.0.3",
 	description="Make runnable desktop apps from your python scripts more easily with pyvan!",
 	url="https://github.com/ClimenteA/pyvan",
 	author="Climente Alin",
@@ -20,9 +20,14 @@ setup (
 	py_modules=["pyvan"],
 	install_requires=[
           'pipreqs',
+		  'Click'
       ],
 	packages=find_packages(),
 	long_description=long_description,
     long_description_content_type="text/markdown",
-	package_dir={"":"src"}
+	package_dir={"":"src"},
+	entry_points='''
+        [console_scripts]
+        pyvan=src.pyvan:cli
+    ''',
 )

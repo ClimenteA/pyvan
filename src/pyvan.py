@@ -13,8 +13,6 @@ from subprocess import Popen, PIPE
 
 
 
-print("\npyvan - version 0.0.2\nMake runnable desktop apps from your python scripts more easily with pyvan!\n\n")
-
 if os.name == 'nt':
     DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
 else:
@@ -295,3 +293,43 @@ def build(build_options):
     prepare_main(build_options)
 
     print("\n\nFinished! Folder 'dist' contains your runnable application!\n\n")
+
+
+
+
+import click
+
+@click.command()
+@click.option('--main_file_name', "-f", default="main.py", help='Entry point of the program')
+@click.option('--show_console', "-c", default=True, help='Show(console app) or not(gui app) the console window')
+@click.option('--use_pipreqs', "-r", default=True, help='Try to minimize the size by installing only the required modules with the help of pipreq module')
+# @click.option('--exclude_modules', "-e", multiple=True, default=None, help='List of modules to exclude')
+# @click.option('--include_modules', "-i", multiple=True, default=None, help='List of modules to include')
+@click.option('--get_pip_location', "-g", default="https://bootstrap.pypa.io/get-pip.py", help='Link to get_pip.py file to download')
+@click.option('--embeded_python_location', "-p", default="https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip", help='Link to embeded python zip from python.com')
+@click.option('--make_van', "-v", default=False, help='Make the preparation van.py to configure build.')
+def cli(main_file_name, show_console, use_pipreqs, get_pip_location, embeded_python_location, make_van):
+    
+    """\npyvan - version 0.0.3\nMake runnable desktop apps from your python scripts more easily with pyvan!\n\n"""
+    
+    if make_van:
+        van_data = 'import pyvan \n\ntry:\n    pyvan.build({"main_file_name": "main.py", \n                "show_console": False,\n                "use_pipreqs": True,\n                "exclude_modules":[],\n                "include_modules":[],\n                "get_pip_location": "https://bootstrap.pypa.io/get-pip.py",\n                "embeded_python_location": "https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip",   \n            })\nexcept Exception as err:\n    pyvan.show_traceback(err)\n    input("\\nPress enter to exit..")\n\n'
+        with open("van.py", "w") as van:
+            van.write(van_data)
+        click.echo("Made the van.py file. \nModify it if needed and run python van.py to build the distributable.")
+    else:
+        build({"main_file_name": main_file_name, 
+            "show_console": show_console,
+            "use_pipreqs": use_pipreqs,
+            "exclude_modules":[],
+            "include_modules":[],
+            "get_pip_location": get_pip_location,
+            "embeded_python_location": embeded_python_location,   
+        })
+
+
+
+
+
+if __name__ == '__main__':
+    cli()
