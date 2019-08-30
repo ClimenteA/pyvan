@@ -1,4 +1,4 @@
-# pyvan
+# pyvan [![Downloads](https://pepy.tech/badge/pyvan)](https://pepy.tech/project/pyvan)
 #### Make runnable desktop apps from your python scripts more easily with pyvan!
 
 <br>
