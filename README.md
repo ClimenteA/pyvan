@@ -51,13 +51,6 @@ except Exception as err:
 * "icon_location": "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
                             in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
 
-### Django local desktop app?
-Yep can be done, checkout flaskwebgui.
-Copy django folder from their git repo add in the django folder asgiref and sqlparse dependencies run python manage.py fix broken imports by adding from django.sqlparse import x or import django.sqlparse etc(you will figure it out.)
-
-And that's it !
-
-
 
 ### Why pyvan?
 
