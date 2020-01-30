@@ -62,6 +62,9 @@ It's easy if something goes wrong for whatever reason you can just go in the dis
 <br>
 If you want and .exe instead of a .bat file you can convert your .bat file to .exe (even put an icon) using the tools you will find online.
 
+### If something goes wrong follow the steps from this awesome article:
+
+https://dev.to/fpim/setting-up-python-s-windows-embeddable-distribution-properly-1081
 
 
 
