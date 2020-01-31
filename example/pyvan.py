@@ -1,32 +1,35 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 import time
-from datetime import datetime
-import traceback
-
+import os, sys
+import shutil
 import zipfile
-import urllib.request
-import os, sys, shutil, subprocess
-
-import shlex
 import subprocess
-from subprocess import Popen, PIPE
 
 
+# In[ ]:
 
 
-if os.name == 'nt':
-    DOWNLOADS_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
-else:
-    try:
-        DOWNLOADS_PATH = os.path.join(os.path.expanduser('~'), 'downloads')
-    except:
-        DOWNLOADS_PATH = os.getcwd()
+header_no_console = """import sys, os
+if sys.executable.endswith('pythonw.exe'):
+    sys.stdout = open(os.devnull, 'w')
+    sys.stderr = open(os.path.join(os.getenv(\'TEMP\'), \'stderr-{}\'.format(os.path.basename(sys.argv[0]))), "w")
+    
+"""
 
 
-def run_cmd(command):
-    print("Running cmd: ", command)
+# In[ ]:
 
-    cmd = command #shlex.split(command)
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+def execute_os_command(command):
+    """Execute terminal command"""
+    
+    print("Running command: ", command)
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     # Poll process for new output until finished
     while True:
@@ -46,290 +49,340 @@ def run_cmd(command):
         raise Exception(command, exitCode, output)
 
 
-    print("cmd executed")
+# In[ ]:
 
 
-
-def show_traceback(err):
-    """Write the error on a error txt file show the traceback of the error"""
-    err_time = str(datetime.now()) #'2011-05-03 17:45:35.177000'
-    tb_error_msg = traceback.format_exc()
-    errormessage = "###########\n{}\nERROR:\n{}\n\nDetails:\n{}\n###########\n\n\n".format(err_time, err, tb_error_msg)
-
-    print(errormessage)
-
-    with open("ERRORS.txt", "a") as errfile:
-        errfile.write(errormessage)
-
-    return errormessage
+def put_code_in_dist_folder():
+    """Copy .py files and others to dist folder"""
+    #Delete dist folder
+    if os.path.isdir("dist"):
+        shutil.rmtree('dist')
+    print("Copying files..")
+    shutil.copytree(os.getcwd(), os.path.join(os.getcwd(), "dist"))
+    print("Files copied to dist folder!")
 
 
+# In[ ]:
 
 
-# def ENV_PATH(unset=True):
-#     """
-#         Delete all values from PATH environment variables
-#         or update PATH environment variables
-#     """
+def prep_requirements(OPTIONS):
+    """ Create requirements.txt file from which to install modules on embeded python version """
     
-#     _environ = os.environ.copy()
-    
-#     if unset:
-#         os.environ.clear()
-#         return _environ # Make sure to KEEP THIS 
-#     else:
-#         os.environ.update(_environ)
-
-
-
-
-def get_static():
-    try:
-        shutil.rmtree('./dist')
-    except:
-        pass
-    print("Copying static files..")
-    src = os.getcwd()
-    dst = os.path.join(src, "dist")
-    shutil.copytree(src, dst)
-    print("Static files colected!")
-
-
-def prepare_dist(options):
-    """
-        Create the 'dist' folder where the app will be bundled
-        Gather needed imports into a requirements.txt file
-    """
-
-    if options["use_pipreqs"]:
+    if OPTIONS["use_pipreqs"]:
         print("Searching modules needed using 'pipreqs'...")
-        cmd = "pipreqs . --force --ignore dist"
-        run_cmd(cmd)
-        shutil.move('requirements.txt', 'dist/requirements.txt')
+        execute_os_command("pipreqs . --force --ignore dist")
         print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
-        cmd = "pip3.exe freeze > requirements.txt"
-        run_cmd(cmd)
-        shutil.move('requirements.txt', 'dist/requirements.txt')
+        execute_os_command("pip3.exe freeze > requirements.txt")
         print("Done!")
 
-    print("Checking which modules to exclude or to keep")
 
-    with open('dist/requirements.txt', 'r') as r:
+# In[ ]:
+
+
+def filter_requirements(OPTIONS):
+    """Filter modules and keep only the ones needed"""
+    
+    print("Checking which modules to exclude or to keep")
+    with open('requirements.txt', 'r') as r:
         modules_to_install = r.read().splitlines()
 
-    if options["exclude_modules"]:
-        modules_to_install = list(set.difference(set(modules_to_install),
-                                                 set(options["exclude_modules"]
-                                                 )))
+    if OPTIONS["exclude_modules"]:
+        modules_to_install = list(set.difference(set(modules_to_install), set(OPTIONS["exclude_modules"])))
 
-    if options["include_modules"]:
-        modules_to_install = modules_to_install + options["include_modules"]
+    if OPTIONS["include_modules"]:
+        modules_to_install = modules_to_install + OPTIONS["include_modules"]
 
+    print("Updating 'requirements.txt' file")
+    with open('requirements.txt', 'w') as f:
+        f.write("\n".join(modules_to_install))
+
+    print("File requirements.txt done!")
+
+
+# In[ ]:
+
+
+def add_embeded_and_pip_to_dist(GET_PIP_PATH, PYTHON_EMBEDED_PATH):
+    """ Copy embeded python and get-pip file to dist folder """
     
-    print("Updating 'dist/requirements.txt' file")
-    with open('dist/requirements.txt', 'w') as r:
-        for module in modules_to_install:
-            if module.endswith("info") or module.startswith("pyvan"):
-                continue 
-            if not module == modules_to_install[-1]:
-                r.write(str(module) + "\n")
-            else:
-                r.write(str(module))
-
-    print("Requirements check done!")
-    return modules_to_install
-
-
-
-def get_files_from_url(url, dst):
-    """
-        Copy the file from the url specified to the dst specified
-    """
-
-    if os.path.isfile(dst):
-        print("Using already copied file", dst)
-        return
-
-    print("Copying data from ", url, " ..")
-
-    headers = {}
-    url_request = urllib.request.Request(url, headers=headers)
-    url_connect = urllib.request.urlopen(url_request)
-
-    with open(dst, 'wb') as f:
-        while True:
-            buffer = url_connect.read(1024)
-            if not buffer: break
-            f.write(buffer)
-
-    url_connect.close()
-
-    print("Succesfully copied to Downloads!")
-
-
-def prepare_zip():
-    """
-        Extracting python embeded zip
-    """
-
-    print("Extracting .zip file..")
-    zip_ref = zipfile.ZipFile(os.path.join(DOWNLOADS_PATH, 'embeded_python.zip'), 'r')
-    zip_ref.extractall('./dist')
+    print(f"Extracting {PYTHON_EMBEDED_PATH} to dist folder")
+    zip_ref = zipfile.ZipFile(PYTHON_EMBEDED_PATH, 'r')
+    zip_ref.extractall('dist')
     zip_ref.close()
     print("Zip file extracted!")
 
-    time.sleep(1)
-    
-    with open("./dist/python37._pth", 'w') as f:
-        for line in ['python37.zip', '.', '' 'import site']:        
-            f.write(line)
-            f.write("\n")
-
-    print("Uncommented 'import site' line from 'python37._pth' file")
-
-    shutil.copy2(os.path.join(DOWNLOADS_PATH, 'get_pip.py'), './dist/get_pip.py')
-    print("Copied get_pip.py to './dist'")
+    shutil.copy2(GET_PIP_PATH, "dist")
+    print("File 'get-pip.py' file copied to dist!")
 
 
-def get_modules(modules_to_install):
+# In[ ]:
+
+
+def prepare_for_pip_install(pth_file, zip_pyfile):
     """
-        Install all needed modules
+        Prepare the extracted embeded python version for pip instalation
+        - Uncommented 'import site' line from pythonXX._pth file
+        - Extract pythonXX.zip zip file to pythonXX.zip folder and delete pythonXX.zip zip file
     """
+    print(f"Uncommented 'import site' line from '{pth_file}' file")
+    with open(pth_file, 'w') as f:
+        f.write(f'{zip_pyfile}\n.\n\n# Uncomment to run site.main() automatically\nimport site\n')
 
-    os.chdir("./dist")
-    print("CD to dist")
+    print(f"Extracting {zip_pyfile} file")
+
+    temp_folder = str(zip_pyfile + "_temp")
+    os.mkdir(temp_folder)
+
+    zip_ref = zipfile.ZipFile(zip_pyfile, 'r')
+    zip_ref.extractall(temp_folder)
+    zip_ref.close()
+
+    os.remove(zip_pyfile)
+
+    for n in range(10):
+        try:
+            #Try 10 times to delete the file 
+            os.rename(temp_folder, zip_pyfile)
+        except: #Permision error
+            time.sleep(0.3)
+
+    print(f"Zip file extracted to {zip_pyfile} folder!")
+
+
+# In[ ]:
+
+
+def install_requirements():
+    """Install pip and the modules from requirements.txt file"""
     
-    print("Running get_pip.py from ", os.getcwd())
+    print("Installing pip..")
 
-    cmd = "python.exe get_pip.py"
-    run_cmd(cmd)
+    execute_os_command("python.exe get-pip.py --no-warn-script-location")
 
     if not os.path.isdir("Scripts"):
-        raise Exception("ERROR: pip not installed!")
+        raise Exception("Module 'pip' didn't install corectly from 'get-pip.py' file!")
 
-    print("PIP installed!")
-    os.chdir("./Scripts")
-    print("CD to Scripts", os.getcwd())
+    print("Module pip installed!")
 
-    cmd = "pip3.exe install -r ../requirements.txt --no-cache-dir --no-warn-script-location"
-    run_cmd(cmd)
+    os.chdir("Scripts")
+    print("Moved runtime to Scripts folder: ", os.getcwd())
+
+    cmd = "pip3.exe install --no-cache-dir --no-warn-script-location -r ../requirements.txt"
+    execute_os_command(cmd)
+
+
+# In[ ]:
+
+
+def make_startup_batch(OPTIONS):
+    """ Make the startup batch files needed to run the script """
+    
+    print("Making startup batch files")
+
+    mfname = OPTIONS["main_file_name"].split(".py")[0]
+
+    if OPTIONS["show_console"]:
+        with open(str(mfname + ".bat"), "w") as f:
+            f.write(str("START python " + OPTIONS["main_file_name"]))
+    else:
+        with open(OPTIONS["main_file_name"], 'r') as f:
+            main_content = f.read()
+
+        if header_no_console not in main_content:
+            with open(OPTIONS["main_file_name"], 'w') as f:
+                f.write(str(header_no_console + main_content))
+
+        with open(str(mfname + ".bat"), "w") as f:
+            f.write(str("START pythonw " + OPTIONS["main_file_name"]))
+
     print("Done!")
 
-    os.chdir("..")
-    print("CD back to 'dist'")
-    print("\nFinished installing dependencies!")
+
+# In[ ]:
 
 
-
-def prepare_main(options):
-    """
-        Prepare main entry point of the app by copying all needed files to
-        the extracted embeded python folder and creating a .bat file which will run the script
-    """
-
-    print("\nPreparing .bat/ executable file in ", os.getcwd())
-
-    if options["show_console"]:
-        bat_command = "START python " + options["main_file_name"]
+def process_options(OPTIONS):
+    
+    #Get the path to python emebeded zip file and get-pip.py file
+    if OPTIONS['path_to_get_pip_and_python_embeded_zip'] == "":
+        FILES_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
     else:
-        print("--noconsole ", os.getcwd())
-        with open(options["main_file_name"], 'r') as p:
-            out = p.read().splitlines()
+        FILES_PATH = OPTIONS['path_to_get_pip_and_python_embeded_zip']
 
-        no_console_hack = ['import sys, os',
-                            "if sys.executable.endswith('pythonw.exe'):",
-                            "  sys.stdout = open(os.devnull, 'w')",
-                            '  sys.stderr = open(os.path.join(os.getenv(\'TEMP\'), \'stderr-{}\'.format(os.path.basename(sys.argv[0]))), "w")',
-                            '']
-
-        file_with_hack = no_console_hack + out
-
-        with open(options["main_file_name"], "w") as m:
-            for line in file_with_hack:
-                m.write(line)
-                m.write("\n")
-                bat_command = "START pythonw " + options["main_file_name"]
-
-    bat_path = os.path.join(os.getcwd(), options["main_file_name"].replace(".py", ".bat"))
-
-    with open(bat_path, "w") as b:
-        b.write(bat_command)
-
-
-
-
-
-def build(build_options):
-
-    if not os.path.isfile(build_options["main_file_name"]):
-        raise Exception("Entry point file(main_file_name) not found!")
-
-    get_static()
-
-    modules_to_install = prepare_dist(build_options)
-
-    if "https://" in build_options["get_pip_location"]:
-        get_files_from_url(build_options["get_pip_location"], os.path.join(DOWNLOADS_PATH, "get_pip.py"))
+    if 'get-pip.py' not in os.listdir(FILES_PATH):
+        raise Exception(f"'get-pip.py' not found in {FILES_PATH}")
     else:
-        print("Copying get_pip.py to dist..")
-        shutil.copy2(build_options["get_pip_location"], "dist/get_pip.py")
-        print("Done!")
+        GET_PIP_PATH = os.path.join(FILES_PATH, 'get-pip.py')
 
-    if "https://" in build_options["embeded_python_location"]:
-        get_files_from_url(build_options["embeded_python_location"], os.path.join(DOWNLOADS_PATH, "embeded_python.zip"))
-    else:
-        print("Copying {} to dist..".format(build_options["embeded_python_location"]))
-        shutil.copy2(build_options["embeded_python_location"], "dist/embeded_python.zip")
-        print("Done!")
+    PYTHON_EMBEDED_PATH = None
+    for file in os.listdir(FILES_PATH):
+        if "python" in file and "embed" in file and file.endswith(".zip"):
+            PYTHON_EMBEDED_PATH = os.path.join(FILES_PATH, file)
+            PYTHON_VERSION = "python" + file.split("-")[1].replace(".", "")[:2]
+            break
 
-    # dist_name = "dist/{}".format(build_options["main_file_name"].replace(".py", ""))
+    if not PYTHON_VERSION:
+        raise Exception(f"'python-x.x.x-embed-xxxxx.zip' not found in {FILES_PATH}")
 
-    prepare_zip()
+    pth_file   = PYTHON_VERSION + "._pth"
+    zip_pyfile = PYTHON_VERSION + ".zip"
 
-    get_modules(modules_to_install)
+    print("Using", PYTHON_VERSION, "from:\n", GET_PIP_PATH, "\n", PYTHON_EMBEDED_PATH)
+    
+    return GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile
 
-    prepare_main(build_options)
 
+# In[ ]:
+
+
+def build(OPTIONS):
+    """ Calling all funcs needed and processing options """
+    
+    base_path = os.getcwd()
+    
+    GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = process_options(OPTIONS)
+    
+    prep_requirements(OPTIONS)
+    filter_requirements(OPTIONS)
+    put_code_in_dist_folder()
+    add_embeded_and_pip_to_dist(GET_PIP_PATH, PYTHON_EMBEDED_PATH)
+
+    os.chdir("dist")
+    print("Moved runtime to dist folder: ", os.getcwd())
+
+    make_startup_batch(OPTIONS)
+    prepare_for_pip_install(pth_file, zip_pyfile)
+    install_requirements()
+    
+    os.chdir(base_path)
+    
     print("\n\nFinished! Folder 'dist' contains your runnable application!\n\n")
 
 
+# In[ ]:
 
 
-import click
+# build({"main_file_name": "main.py", 
+#        "show_console": False,
+#        "use_pipreqs": True,
+#        "exclude_modules":[],
+#        "include_modules":[],
+#        "path_to_get_pip_and_python_embeded_zip": ""
+#      })
 
-@click.command()
-@click.option('--main_file_name', "-f", default="main.py", help='Entry point of the program')
-@click.option('--show_console', "-c", default=True, help='Show(console app) or not(gui app) the console window')
-@click.option('--use_pipreqs', "-r", default=True, help='Try to minimize the size by installing only the required modules with the help of pipreq module')
-# @click.option('--exclude_modules', "-e", multiple=True, default=None, help='List of modules to exclude')
-# @click.option('--include_modules', "-i", multiple=True, default=None, help='List of modules to include')
-@click.option('--get_pip_location', "-g", default="https://bootstrap.pypa.io/get-pip.py", help='Link to get_pip.py file to download')
-@click.option('--embeded_python_location', "-p", default="https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip", help='Link to embeded python zip from python.com')
-@click.option('--make_van', "-v", default=False, help='Make the preparation van.py to configure build.')
-def cli(main_file_name, show_console, use_pipreqs, get_pip_location, embeded_python_location, make_van):
-    
-    """\npyvan - version 0.0.3\nMake runnable desktop apps from your python scripts more easily with pyvan!\n\n"""
-    
-    if make_van:
-        van_data = 'import pyvan \n\ntry:\n    pyvan.build({"main_file_name": "main.py", \n                "show_console": False,\n                "use_pipreqs": True,\n                "exclude_modules":[],\n                "include_modules":[],\n                "get_pip_location": "https://bootstrap.pypa.io/get-pip.py",\n                "embeded_python_location": "https://www.python.org/ftp/python/3.7.3/python-3.7.3-embed-amd64.zip",   \n            })\nexcept Exception as err:\n    pyvan.show_traceback(err)\n    input("\\nPress enter to exit..")\n\n'
-        with open("van.py", "w") as van:
-            van.write(van_data)
-        click.echo("Made the van.py file. \nModify it if needed and run python van.py to build the distributable.")
-    else:
-        build({"main_file_name": main_file_name, 
-            "show_console": show_console,
-            "use_pipreqs": use_pipreqs,
-            "exclude_modules":[],
-            "include_modules":[],
-            "get_pip_location": get_pip_location,
-            "embeded_python_location": embeded_python_location,   
-        })
+
+# In[ ]:
 
 
 
 
 
-if __name__ == '__main__':
-    cli()
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
