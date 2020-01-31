@@ -23,7 +23,7 @@ else:
 
 
 def run_cmd(command):
-    print("Running cmd: ", command)
+    print("Running command: ", command)
 
     cmd = command #shlex.split(command)
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -46,7 +46,7 @@ def run_cmd(command):
         raise Exception(command, exitCode, output)
 
 
-    print("cmd executed")
+    print("Command executed")
 
 
 
@@ -109,12 +109,7 @@ def prepare_dist(options):
         print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
-        
-        if os.name == 'nt':
-            cmd = "pip.exe freeze > requirements.txt"
-        else:
-            cmd = "pip3.exe freeze > requirements.txt"
-            
+        cmd = "pip3.exe freeze > requirements.txt"
         run_cmd(cmd)
         shutil.move('requirements.txt', 'dist/requirements.txt')
         print("Done!")
@@ -217,12 +212,8 @@ def get_modules(modules_to_install):
     print("PIP installed!")
     os.chdir("./Scripts")
     print("CD to Scripts", os.getcwd())
-    
-    if os.name == 'nt':
-        cmd = "pip.exe install -r ../requirements.txt --no-cache-dir --no-warn-script-location"
-    else:
-        cmd = "pip3.exe install -r ../requirements.txt --no-cache-dir --no-warn-script-location"
-        
+
+    cmd = "pip3.exe install -r ../requirements.txt --no-cache-dir --no-warn-script-location"
     run_cmd(cmd)
     print("Done!")
 
