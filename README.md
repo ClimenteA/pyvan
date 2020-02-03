@@ -2,13 +2,12 @@
   <img src="pyvan.png">
 </p>
 
-
 <p align="center">
-  
   <h4> Make runnable desktop apps from your python scripts!</h4>
-  [![Downloads](https://pepy.tech/badge/pyvan)](https://pepy.tech/project/pyvan)
-
 </p>
+
+
+[![Downloads](https://pepy.tech/badge/pyvan)](https://pepy.tech/project/pyvan)
 
 
 ### Install
