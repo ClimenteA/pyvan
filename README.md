@@ -37,20 +37,20 @@ pyvan.build(OPTIONS)
 
 ### Configurations
 
-* "main_file_name": "main.py", ==> the entry point of the application
+* **main_file_name**: "main.py", ==> the entry point of the application
 
-* "show_console": True,        ==> show console window or not (for a service or GUI app)
+* **show_console**: True,        ==> show console window or not (for a service or GUI app)
 
-* "use_pipreqs": True,         ==> pipreqs tries to minimize the size of your app by looking at your imports 
+* **use_pipreqs**: True,         ==> pipreqs tries to minimize the size of your app by looking at your imports 
                                 (best way is to use a virtualenv to ensure a smaller size)
 
-* "exclude_modules":[],        ==> modules to exclude from bundle 
+* **exclude_modules**:[],        ==> modules to exclude from bundle 
 
-* "include_modules":[],        ==> modules to include in the bundle
+* **include_modules**:[],        ==> modules to include in the bundle
 
-* "path_to_get_pip_and_python_embeded_zip" ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
+* **path_to_get_pip_and_python_embeded_zip** ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
 
-* "icon_location": "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
+* **icon_location**: "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
                             in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
 
 
