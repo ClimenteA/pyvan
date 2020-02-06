@@ -169,8 +169,24 @@ def install_requirements():
     os.chdir("Scripts")
     print("Moved runtime to Scripts folder: ", os.getcwd())
 
-    cmd = "pip3.exe install --no-cache-dir --no-warn-script-location -r ../requirements.txt"
-    execute_os_command(cmd)
+    try:
+        cmd = "pip3.exe install --no-cache-dir --no-warn-script-location -r ../requirements.txt"
+        execute_os_command(cmd)
+    except:
+        
+        print("Installing modules one by one..")
+        
+        with open("../requirements.txt", "r") as f:
+            modules = f.read().splitlines()
+        
+        for module in modules:
+            try:
+                cmd = "pip3.exe install --no-cache-dir --no-warn-script-location " + module
+                execute_os_command(cmd)
+            except:
+                print("FAILED TO INSTALL ", module)
+                with open("FAILED_TO_INSTALL_MODULES.txt", "a") as f:
+                    f.write(str(module + "\n"))
 
 
 # In[ ]:
@@ -187,11 +203,11 @@ def make_startup_batch(OPTIONS):
         with open(str(mfname + ".bat"), "w") as f:
             f.write(str("START python " + OPTIONS["main_file_name"]))
     else:
-        with open(OPTIONS["main_file_name"], 'r') as f:
+        with open(OPTIONS["main_file_name"], "r", encoding="utf8", errors="surrogateescape") as f:
             main_content = f.read()
 
         if header_no_console not in main_content:
-            with open(OPTIONS["main_file_name"], 'w') as f:
+            with open(OPTIONS["main_file_name"], "w", encoding="utf8", errors="surrogateescape") as f:
                 f.write(str(header_no_console + main_content))
 
         with open(str(mfname + ".bat"), "w") as f:
@@ -240,12 +256,25 @@ def process_options(OPTIONS):
 def build(OPTIONS):
     """ Calling all funcs needed and processing options """
     
-    base_path = os.getcwd()
+    BASE_DIR = os.getcwd()
     
     GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = process_options(OPTIONS)
     
-    prep_requirements(OPTIONS)
-    filter_requirements(OPTIONS)
+    if not OPTIONS["install_only_these_modules"]:
+        try:
+            prep_requirements(OPTIONS)
+        except:
+            try:
+                OPTIONS["use_pipreqs"] = False
+                prep_requirements(OPTIONS)
+            except:
+                raise Exception("Please add modules needed in OPTIONS['include_modules']!")
+
+        filter_requirements(OPTIONS)
+    else:
+        with open('requirements.txt', 'w') as f:
+            f.write("\n".join(OPTIONS["install_only_these_modules"]))
+            
     put_code_in_dist_folder()
     add_embeded_and_pip_to_dist(GET_PIP_PATH, PYTHON_EMBEDED_PATH)
 
@@ -256,7 +285,7 @@ def build(OPTIONS):
     prepare_for_pip_install(pth_file, zip_pyfile)
     install_requirements()
     
-    os.chdir(base_path)
+    os.chdir(BASE_DIR)
     
     print("\n\nFinished! Folder 'dist' contains your runnable application!\n\n")
 
@@ -264,121 +293,33 @@ def build(OPTIONS):
 # In[ ]:
 
 
-# build({"main_file_name": "main.py", 
-#        "show_console": False,
-#        "use_pipreqs": True,
-#        "exclude_modules":[],
-#        "include_modules":[],
-#        "path_to_get_pip_and_python_embeded_zip": ""
-#      })
+# modules_to_install = ["flask",
+#                       "pandas",
+#                       "flaskwebgui",
+#                       "plotly",
+#                       "xlrd",
+#                       "xlwt",
+#                       "openpyxl",
+#                      ]
 
 
 # In[ ]:
 
 
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
+# OPTIONS = {"main_file_name": "meckan.py", 
+#            "show_console": False,
+#            "use_pipreqs": True,
+#            "install_only_these_modules": [],
+#            "include_modules":[],
+#            "exclude_modules":[],
+#            "path_to_get_pip_and_python_embeded_zip": ""
+#           }
 
 
 # In[ ]:
 
 
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
+# build(OPTIONS)
 
 
 # In[ ]:
