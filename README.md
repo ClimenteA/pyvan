@@ -55,8 +55,18 @@ pyvan.build(OPTIONS)
 
 * **icon_location**: "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
                             in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
-
+                            
 If pyvan didn't managed to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
+
+### For creating a .exe with a custom icon checkout bellow repos:
+
+https://github.com/tokyoneon/B2E
+
+https://github.com/tywali/Bat2ExeConverter
+
+https://github.com/DarrenRainey/battoexe
+
+https://github.com/julianollivieira/b2executable
 
 
 ### Why pyvan?
@@ -64,8 +74,6 @@ If pyvan didn't managed to install all the modules needed go in dist/Scripts fol
 **pyvan** it's just one file which takes the embedded python version, installs the modules you need and makes a link using a .bat file between python(w).exe and your main.py script.
 <br>
 It's easy if something goes wrong for whatever reason you can just go in the dist folder and solve the issue the python way (because there is just python and your scripts :).
-<br>
-If you want and .exe instead of a .bat file you can convert your .bat file to .exe (even put an icon) using the tools you will find online.
 
 
 
