@@ -14,6 +14,8 @@
 ```
 pip install pyvan
 ```
+or download [pyvan.py](https://raw.githubusercontent.com/ClimenteA/pyvan/master/src/pyvan.py) file.
+
 ### Usage
 
 Make a "van.py" file next to the "main.py" file (entry point of your program) 
