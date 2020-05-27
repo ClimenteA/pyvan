@@ -77,7 +77,7 @@ https://github.com/julianollivieira/b2executable
 <br>
 It's easy if something goes wrong for whatever reason you can just go in the dist folder and solve the issue the python way (because there is just python and your scripts :).
 
-
+**Submit any questions/issues you have! Fell free to fork it and improve it!**
 
 
 
