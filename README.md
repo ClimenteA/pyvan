@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <h4> Make runnable desktop/cmd apps from your python scripts!</h4>
+  <h2> Make runnable desktop/cmd apps from your python scripts!</h2>
 </p>
 
 
