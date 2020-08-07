@@ -11,7 +11,7 @@
 
 
 ### Install
-```
+```py
 pip install pyvan
 ```
 or download [pyvan.py](https://raw.githubusercontent.com/ClimenteA/pyvan/master/src/pyvan.py) file.
@@ -22,7 +22,7 @@ Make a "van.py" file next to the "main.py" file (entry point of your program)
 
 Paste the code bellow:
 
-```
+```py
 import pyvan 
 
 OPTIONS = {"main_file_name": "main.py", 
