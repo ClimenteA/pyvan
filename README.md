@@ -27,10 +27,11 @@ import pyvan
 
 OPTIONS = {"main_file_name": "main.py", 
             "show_console": False,
+            "use_existing_requirements": False,
             "use_pipreqs": True,
             "install_only_these_modules": [],
-            "exclude_modules":[],
-            "include_modules":[],
+            "exclude_modules": [],
+            "include_modules": [],
             "path_to_get_pip_and_python_embeded_zip": ""
             }
 
@@ -44,14 +45,17 @@ pyvan.build(OPTIONS)
 
 * **show_console**: True,        ==> show console window or not (for a service or GUI app)
 
+* **use_existing_requirements**: True, ==> if specified pyvan will use an existing requirements.txt file instead of generating one using the: 
+                                       use_pipreqs, install_only_these_modules, exclude_modules, and include_modules options
+
 * **use_pipreqs**: True,         ==> pipreqs tries to minimize the size of your app by looking at your imports 
-                                (best way is to use a virtualenv to ensure a smaller size, if fails will do pip freeze)
+                                 (best way is to use a virtualenv to ensure a smaller size, if fails will do pip freeze)
+  
+* **install_only_these_modules**: [], ==> pyvan will install only the modules mentioned here
 
-* **install_only_these_modules**: [] ==> pyvan will install only the modules mentioned here
+* **exclude_modules**: [],        ==> modules to exclude from bundle 
 
-* **exclude_modules**:[],        ==> modules to exclude from bundle 
-
-* **include_modules**:[],        ==> modules to include in the bundle
+* **include_modules**: [],        ==> modules to include in the bundle
 
 * **path_to_get_pip_and_python_embeded_zip** ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
 
