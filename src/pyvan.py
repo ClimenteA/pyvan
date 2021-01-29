@@ -259,8 +259,12 @@ def build(OPTIONS):
     BASE_DIR = os.getcwd()
     
     GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = process_options(OPTIONS)
-    
-    if not OPTIONS["install_only_these_modules"]:
+
+    if OPTIONS["use_existing_requirements"]:
+        if not os.path.isfile("requirements.txt"):
+            raise FileNotFoundError("No requirements.txt file was found in: {}\nuse_existing_requirements requires one.".format(os.path.abspath(BASE_DIR)))
+        print("Using existing requirements.txt file from: {}".format(os.path.abspath(BASE_DIR)))
+    elif not OPTIONS["install_only_these_modules"]:
         try:
             prep_requirements(OPTIONS)
         except:
