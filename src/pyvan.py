@@ -69,12 +69,12 @@ def put_code_in_dist_folder(source_dir, target_dir, build_dir):
 # In[ ]:
 
 
-def prep_requirements(use_pipreqs, target_req_file, input_dir):
+def prep_requirements(use_pipreqs, target_req_file, input_dir, build_dir):
     """ Create requirements.txt file from which to install modules on embeded python version """
 
     if use_pipreqs:
-        print("Searching modules needed using 'pipreqs'...")
-        execute_os_command(command="pipreqs . --force --ignore dist", cwd=os.path.dirname(target_req_file))
+        print(f"Searching modules needed using 'pipreqs'...")
+        execute_os_command(command=f"pipreqs {input_dir} --force --ignore {os.path.basename(build_dir)} --savepath {target_req_file}")
         print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
@@ -158,7 +158,7 @@ def prepare_for_pip_install(pth_file, zip_pyfile):
 # In[ ]:
 
 
-def install_requirements(pydist_dir, req_file, extra_pip_install_args = None):
+def install_requirements(pydist_dir, build_dir, req_file, extra_pip_install_args = None):
     """
         Install pip and the modules from requirements.txt file
         - extra_pip_install_args (optional `List[str]`) : pass these additional arguments to the pip install command
@@ -194,7 +194,7 @@ def install_requirements(pydist_dir, req_file, extra_pip_install_args = None):
                 execute_os_command(command=cmd, cwd=scripts_dir)
             except:
                 print("FAILED TO INSTALL ", module)
-                with open("FAILED_TO_INSTALL_MODULES.txt", "a") as f:
+                with open(os.path.join(build_dir, "FAILED_TO_INSTALL_MODULES.txt"), "a") as f:
                     f.write(str(module + "\n"))
 
 
@@ -228,13 +228,13 @@ def make_startup_batch(main_file_name, show_console, build_dir, relative_pydist_
 # In[ ]:
 
 
-def find_required_install_files(path_to_get_pip_and_python_embeded_zip):
+def find_required_install_files(path_to_get_pip_and_python_embedded_zip):
     
     #Get the path to python emebeded zip file and get-pip.py file
-    if path_to_get_pip_and_python_embeded_zip == "":
+    if path_to_get_pip_and_python_embedded_zip == "":
         FILES_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
     else:
-        FILES_PATH = path_to_get_pip_and_python_embeded_zip
+        FILES_PATH = path_to_get_pip_and_python_embedded_zip
 
     if 'get-pip.py' not in os.listdir(FILES_PATH):
         raise FileNotFoundError(f"'get-pip.py' not found in {FILES_PATH}")
@@ -308,7 +308,7 @@ def prepare_empty_build_dir(build_dir):
 # In[ ]:
 
 
-def prepare_build_requirements_file(input_dir, build_req_file, use_existing_requirements, exclude_modules,
+def prepare_build_requirements_file(input_dir, build_dir, build_req_file, use_existing_requirements, exclude_modules,
                                     install_only_these_modules, include_modules, use_pipreqs):
     base_dir_req_file = os.path.join(input_dir, "requirements.txt")
     if use_existing_requirements:
@@ -319,12 +319,12 @@ def prepare_build_requirements_file(input_dir, build_req_file, use_existing_requ
         shutil.copy(src=base_dir_req_file, dst=build_req_file)
     elif not any(install_only_these_modules):
         try:
-            prep_requirements(use_pipreqs=use_pipreqs, target_req_file=build_req_file, input_dir=input_dir)
+            prep_requirements(use_pipreqs=use_pipreqs, target_req_file=build_req_file, input_dir=input_dir, build_dir=build_dir)
         except:
             failed = not use_pipreqs
             if not failed:
                 try:
-                    prep_requirements(use_pipreqs=False, target_req_file=build_req_file, input_dir=input_dir)
+                    prep_requirements(use_pipreqs=False, target_req_file=build_req_file, input_dir=input_dir, build_dir=build_dir)
                 except:
                     failed = True
             if failed:
@@ -354,25 +354,28 @@ def build(
     install_only_these_modules = (),
     use_existing_requirements = False,
     extra_pip_install_args = (),
-    path_to_get_pip_and_python_embeded_zip = ""
+    path_to_get_pip_and_python_embedded_zip = ""
 ):
     """ Calling all funcs needed and processing options """
+    if isinstance(main_file_name, dict):
+        raise ValueError("Old interface was passed to `pyvan.build`, please "
+                         "dereference the options dictionary using: `pyvan.build(**OPTIONS)`")
     input_dir = os.path.abspath(input_dir)
     build_dir = os.path.abspath(build_dir)
     pydist_sub_dir = build_dir if pydist_sub_dir == "" else os.path.join(build_dir, pydist_sub_dir)
     source_sub_dir = build_dir if source_sub_dir == "" else os.path.join(build_dir, source_sub_dir)
-    base_dir_req_file = os.path.join(input_dir, "requirements.txt")
     build_req_file = os.path.join(build_dir, "requirements.txt")
 
     display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
                                install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
                                use_existing_requirements, use_pipreqs)
     GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = find_required_install_files(
-        path_to_get_pip_and_python_embeded_zip=path_to_get_pip_and_python_embeded_zip
+        path_to_get_pip_and_python_embedded_zip=path_to_get_pip_and_python_embedded_zip
     )
     prepare_empty_build_dir(build_dir=build_dir)
     prepare_build_requirements_file(
         input_dir=input_dir,
+        build_dir=build_dir,
         build_req_file=build_req_file,
         use_existing_requirements=use_existing_requirements,
         use_pipreqs=use_pipreqs,
@@ -403,6 +406,7 @@ def build(
     )
     install_requirements(
         pydist_dir=pydist_sub_dir,
+        build_dir=build_dir,
         req_file=build_req_file,
         extra_pip_install_args=extra_pip_install_args
     )

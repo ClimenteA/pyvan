@@ -34,7 +34,7 @@ OPTIONS = {
     "install_only_these_modules": [],
     "exclude_modules": [],
     "include_modules": [],
-    "path_to_get_pip_and_python_embeded_zip": "",
+    "path_to_get_pip_and_python_embedded_zip": "",
     "build_dir": "dist",
     "pydist_sub_dir": "pydist",
     "source_sub_dir": "",
@@ -66,7 +66,7 @@ pyvan.build(**OPTIONS)
 
 * **include_modules**: [],        ==> modules to include in the bundle
 
-* **path_to_get_pip_and_python_embeded_zip**: "", ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
+* **path_to_get_pip_and_python_embedded_zip**: "", ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
 
 * **build_dir**: "dist",          ==> the directory in which pyvan will create the stand-alone distribution
 
