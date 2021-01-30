@@ -25,11 +25,11 @@ if sys.executable.endswith('pythonw.exe'):
 # In[ ]:
 
 
-def execute_os_command(command):
+def execute_os_command(command, cwd=None):
     """Execute terminal command"""
     
     print("Running command: ", command)
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=os.getcwd() if cwd is None else cwd)
 
     # Poll process for new output until finished
     while True:
@@ -52,69 +52,73 @@ def execute_os_command(command):
 # In[ ]:
 
 
-def put_code_in_dist_folder():
-    """Copy .py files and others to dist folder"""
-    #Delete dist folder
-    if os.path.isdir("dist"):
-        shutil.rmtree('dist')
-    print("Copying files..")
-    shutil.copytree(os.getcwd(), os.path.join(os.getcwd(), "dist"))
-    print("Files copied to dist folder!")
+def put_code_in_dist_folder(source_dir, target_dir, build_dir):
+    """Copy .py files and others to target folder"""
+    if not os.path.isdir(os.path.dirname(target_dir)):
+        os.makedirs(os.path.dirname(target_dir))
+    print(f"Copying files from {source_dir} to {target_dir}!")
+    shutil.copytree(
+        src=source_dir,
+        dst=target_dir,
+        ignore=shutil.ignore_patterns(os.path.basename(build_dir), "__pycache__", "*.pyc"),
+        dirs_exist_ok=True
+    )
+    print("Files copied!")
 
 
 # In[ ]:
 
 
-def prep_requirements(OPTIONS):
+def prep_requirements(use_pipreqs, target_req_file, input_dir):
     """ Create requirements.txt file from which to install modules on embeded python version """
-    
-    if OPTIONS["use_pipreqs"]:
+
+    if use_pipreqs:
         print("Searching modules needed using 'pipreqs'...")
-        execute_os_command("pipreqs . --force --ignore dist")
+        execute_os_command(command="pipreqs . --force --ignore dist", cwd=os.path.dirname(target_req_file))
         print("Done!")
     else:
         print("Searching modules needed using 'pip freeze'...")
-        execute_os_command("pip3.exe freeze > requirements.txt")
+        execute_os_command(command=f"pip3.exe freeze > {target_req_file}", cwd=input_dir)
         print("Done!")
 
 
 # In[ ]:
 
 
-def filter_requirements(OPTIONS):
+def filter_requirements(target_req_file, include_modules, exclude_modules):
     """Filter modules and keep only the ones needed"""
     
     print("Checking which modules to exclude or to keep")
-    with open('requirements.txt', 'r') as r:
+    with open(target_req_file, 'r') as r:
         modules_to_install = r.read().splitlines()
 
-    if OPTIONS["exclude_modules"]:
-        modules_to_install = list(set.difference(set(modules_to_install), set(OPTIONS["exclude_modules"])))
+    if any(exclude_modules):
+        modules_to_install = list(set.difference(set(modules_to_install), set(exclude_modules)))
 
-    if OPTIONS["include_modules"]:
-        modules_to_install = modules_to_install + OPTIONS["include_modules"]
+    if any(include_modules):
+        modules_to_install = modules_to_install + include_modules
 
-    print("Updating 'requirements.txt' file")
-    with open('requirements.txt', 'w') as f:
+    print(f"Updating {target_req_file} file")
+    with open(target_req_file, 'w') as f:
         f.write("\n".join(modules_to_install))
 
-    print("File requirements.txt done!")
+    print(f"File {target_req_file} done!")
 
 
 # In[ ]:
 
 
-def add_embeded_and_pip_to_dist(GET_PIP_PATH, PYTHON_EMBEDED_PATH):
+def add_embeded_and_pip_to_dist(get_pip_file, embedded_python_file, pydist_dir):
     """ Copy embeded python and get-pip file to dist folder """
     
-    print(f"Extracting {PYTHON_EMBEDED_PATH} to dist folder")
-    zip_ref = zipfile.ZipFile(PYTHON_EMBEDED_PATH, 'r')
-    zip_ref.extractall('dist')
+    print(f"Extracting {embedded_python_file} to {pydist_dir} folder")
+    zip_ref = zipfile.ZipFile(embedded_python_file, 'r')
+    zip_ref.extractall(pydist_dir)
     zip_ref.close()
     print("Zip file extracted!")
 
-    shutil.copy2(GET_PIP_PATH, "dist")
-    print("File 'get-pip.py' file copied to dist!")
+    shutil.copy2(get_pip_file, pydist_dir)
+    print(f"File {get_pip_file} file copied to {pydist_dir}!")
 
 
 # In[ ]:
@@ -154,23 +158,21 @@ def prepare_for_pip_install(pth_file, zip_pyfile):
 # In[ ]:
 
 
-def install_requirements(extra_pip_install_args = None):
+def install_requirements(pydist_dir, req_file, extra_pip_install_args = None):
     """
         Install pip and the modules from requirements.txt file
         - extra_pip_install_args (optional `List[str]`) : pass these additional arguments to the pip install command
     """
-    
     print("Installing pip..")
 
-    execute_os_command("python.exe get-pip.py --no-warn-script-location")
+    execute_os_command(command="python.exe get-pip.py --no-warn-script-location", cwd=pydist_dir)
 
-    if not os.path.isdir("Scripts"):
+    if not os.path.isdir(os.path.join(pydist_dir, "Scripts")):
         raise Exception("Module 'pip' didn't install corectly from 'get-pip.py' file!")
 
     print("Module pip installed!")
 
-    os.chdir("Scripts")
-    print("Moved runtime to Scripts folder: ", os.getcwd())
+    scripts_dir = os.path.join(pydist_dir, "Scripts")
 
     if extra_pip_install_args is not None:
         extra_args_str = " " + " ".join(extra_pip_install_args)
@@ -178,18 +180,18 @@ def install_requirements(extra_pip_install_args = None):
         extra_args_str = ""
 
     try:
-        cmd = "pip3.exe install --no-cache-dir --no-warn-script-location -r ../requirements.txt" + extra_args_str
-        execute_os_command(cmd)
+        cmd = f"pip3.exe install --no-cache-dir --no-warn-script-location -r {req_file}{extra_args_str}"
+        execute_os_command(command=cmd, cwd=scripts_dir)
     except:
         print("Installing modules one by one..")
 
-        with open("../requirements.txt", "r") as f:
+        with open(req_file, "r") as f:
             modules = f.read().splitlines()
 
         for module in modules:
             try:
-                cmd = "pip3.exe install --no-cache-dir --no-warn-script-location " + module + extra_args_str
-                execute_os_command(cmd)
+                cmd = f"pip3.exe install --no-cache-dir --no-warn-script-location {module}{extra_args_str}"
+                execute_os_command(command=cmd, cwd=scripts_dir)
             except:
                 print("FAILED TO INSTALL ", module)
                 with open("FAILED_TO_INSTALL_MODULES.txt", "a") as f:
@@ -199,26 +201,26 @@ def install_requirements(extra_pip_install_args = None):
 # In[ ]:
 
 
-def make_startup_batch(OPTIONS):
+def make_startup_batch(main_file_name, show_console, build_dir, relative_pydist_dir, relative_source_dir):
     """ Make the startup batch files needed to run the script """
     
     print("Making startup batch files")
 
-    mfname = OPTIONS["main_file_name"].split(".py")[0]
+    bat_fname = os.path.join(build_dir, main_file_name.split(".py")[0] + ".bat")
 
-    if OPTIONS["show_console"]:
-        with open(str(mfname + ".bat"), "w") as f:
-            f.write(str("START python " + OPTIONS["main_file_name"]))
+    if show_console:
+        with open(bat_fname, "w") as f:
+            f.write(str(f"START %~dp0/{relative_pydist_dir}python %~dp0/{relative_source_dir}{main_file_name} %*"))
     else:
-        with open(OPTIONS["main_file_name"], "r", encoding="utf8", errors="surrogateescape") as f:
+        with open(main_file_name, "r", encoding="utf8", errors="surrogateescape") as f:
             main_content = f.read()
 
         if header_no_console not in main_content:
-            with open(OPTIONS["main_file_name"], "w", encoding="utf8", errors="surrogateescape") as f:
+            with open(main_file_name, "w", encoding="utf8", errors="surrogateescape") as f:
                 f.write(str(header_no_console + main_content))
 
-        with open(str(mfname + ".bat"), "w") as f:
-            f.write(str("START pythonw " + OPTIONS["main_file_name"]))
+        with open(bat_fname, "w") as f:
+            f.write(str(f"START %~dp0/{relative_pydist_dir}pythonw %~dp0/{relative_source_dir}{main_file_name} %*"))
 
     print("Done!")
 
@@ -226,16 +228,16 @@ def make_startup_batch(OPTIONS):
 # In[ ]:
 
 
-def process_options(OPTIONS):
+def find_required_install_files(path_to_get_pip_and_python_embeded_zip):
     
     #Get the path to python emebeded zip file and get-pip.py file
-    if OPTIONS['path_to_get_pip_and_python_embeded_zip'] == "":
+    if path_to_get_pip_and_python_embeded_zip == "":
         FILES_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
     else:
-        FILES_PATH = OPTIONS['path_to_get_pip_and_python_embeded_zip']
+        FILES_PATH = path_to_get_pip_and_python_embeded_zip
 
     if 'get-pip.py' not in os.listdir(FILES_PATH):
-        raise Exception(f"'get-pip.py' not found in {FILES_PATH}")
+        raise FileNotFoundError(f"'get-pip.py' not found in {FILES_PATH}")
     else:
         GET_PIP_PATH = os.path.join(FILES_PATH, 'get-pip.py')
 
@@ -247,12 +249,12 @@ def process_options(OPTIONS):
             break
 
     if not PYTHON_VERSION:
-        raise Exception(f"'python-x.x.x-embed-xxxxx.zip' not found in {FILES_PATH}")
+        raise FileNotFoundError(f"'python-x.x.x-embed-xxxxx.zip' not found in {FILES_PATH}")
 
     pth_file   = PYTHON_VERSION + "._pth"
     zip_pyfile = PYTHON_VERSION + ".zip"
 
-    print("Using", PYTHON_VERSION, "from:\n", GET_PIP_PATH, "\n", PYTHON_EMBEDED_PATH)
+    print(f"Using {PYTHON_VERSION} from:\n {GET_PIP_PATH} \n {PYTHON_EMBEDED_PATH}")
     
     return GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile
 
@@ -260,45 +262,153 @@ def process_options(OPTIONS):
 # In[ ]:
 
 
-def build(OPTIONS):
-    """ Calling all funcs needed and processing options """
-    
-    BASE_DIR = os.getcwd()
-    
-    GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = process_options(OPTIONS)
-
-    if OPTIONS["use_existing_requirements"]:
-        if not os.path.isfile("requirements.txt"):
-            raise FileNotFoundError("No requirements.txt file was found in: {}\nuse_existing_requirements requires one.".format(os.path.abspath(BASE_DIR)))
-        print("Using existing requirements.txt file from: {}".format(os.path.abspath(BASE_DIR)))
-    elif not OPTIONS["install_only_these_modules"]:
-        try:
-            prep_requirements(OPTIONS)
-        except:
-            try:
-                OPTIONS["use_pipreqs"] = False
-                prep_requirements(OPTIONS)
-            except:
-                raise Exception("Please add modules needed in OPTIONS['include_modules']!")
-
-        filter_requirements(OPTIONS)
+def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
+                               install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
+                               use_existing_requirements, use_pipreqs):
+    print(f"===PYVAN BUILD CONFIGURATION===")
+    print(f"Input dir: {input_dir}")
+    print(f"Build dir: {build_dir}")
+    print(f"Python distribution will be installed in: {pydist_sub_dir}")
+    print(f"App source code will be installed in: {source_sub_dir}")
+    print(f"===REQUIREMENTS===")
+    if use_existing_requirements:
+        print(f"pyvan will try to install from existing requirements.txt at {input_dir}")
+    elif any(install_only_these_modules):
+        print("pyvan will generate a requirements.txt for you based on the following specified modules:")
+        print(f"install_only_these_modules: {install_only_these_modules}")
     else:
-        with open('requirements.txt', 'w') as f:
-            f.write("\n".join(OPTIONS["install_only_these_modules"]))
-            
-    put_code_in_dist_folder()
-    add_embeded_and_pip_to_dist(GET_PIP_PATH, PYTHON_EMBEDED_PATH)
+        print("pyvan will try to resolve requirements for you using pipreqs and/or pip freeze:")
+        print(f"use_pip_reqs: {use_pipreqs}")
+        print(f"include_modules: {include_modules}")
+        print(f"exclude_modules: {exclude_modules}")
+    print("===BUILD OPTIONS===")
+    print(f"requirements will be installed with{'' if any(extra_pip_install_args) else 'out'} additional pip arguments")
+    if any(extra_pip_install_args):
+        print(f"extra_pip_install_args: {extra_pip_install_args}")
+    print(f"===BATCH FILE===")
+    print(f"pyvan will generate a batch file for you in {build_dir}")
+    print(f"pyvan will use the following settings:")
+    print(f"main_file_name: {main_file_name}")
+    print(f"show_console: {show_console}")
+    print()
+    print(f"===START PYVAN BUILD===")
 
-    os.chdir("dist")
-    print("Moved runtime to dist folder: ", os.getcwd())
 
-    make_startup_batch(OPTIONS)
-    prepare_for_pip_install(pth_file, zip_pyfile)
-    install_requirements(extra_pip_install_args=OPTIONS.get("extra_pip_install_args", []))
+# In[ ]:
+
+
+def prepare_empty_build_dir(build_dir):
+    # Delete build folder if it exists
+    if os.path.isdir(build_dir):
+        print(f"Existing build directory found, removing contents... {build_dir}")
+        shutil.rmtree(build_dir)
+    os.makedirs(build_dir)
+
+
+# In[ ]:
+
+
+def prepare_build_requirements_file(input_dir, build_req_file, use_existing_requirements, exclude_modules,
+                                    install_only_these_modules, include_modules, use_pipreqs):
+    base_dir_req_file = os.path.join(input_dir, "requirements.txt")
+    if use_existing_requirements:
+        if not os.path.isfile(base_dir_req_file):
+            raise FileNotFoundError(
+                f"No requirements.txt file was found in: {input_dir}\nuse_existing_requirements requires one.")
+        print(f"Using/copying existing requirements.txt file from: {input_dir}")
+        shutil.copy(src=base_dir_req_file, dst=build_req_file)
+    elif not any(install_only_these_modules):
+        try:
+            prep_requirements(use_pipreqs=use_pipreqs, target_req_file=build_req_file, input_dir=input_dir)
+        except:
+            failed = not use_pipreqs
+            if not failed:
+                try:
+                    prep_requirements(use_pipreqs=False, target_req_file=build_req_file, input_dir=input_dir)
+                except:
+                    failed = True
+            if failed:
+                raise RuntimeError(
+                    "pyvan was unable to generate a requirements.txt. Please add modules needed in OPTIONS['include_modules'] or provide a requirements.txt file and specify OPTIONS['use_existing_requirements']!")
+
+        filter_requirements(target_req_file=build_req_file, include_modules=include_modules,
+                            exclude_modules=exclude_modules)
+    else:
+        with open(build_req_file, 'w') as f:
+            f.write("\n".join(install_only_these_modules))
+
+
+# In[ ]:
+
+
+def build(
+    main_file_name,
+    show_console = False,
+    input_dir = os.getcwd(),
+    build_dir = os.path.join(os.getcwd(), "dist"),
+    pydist_sub_dir = "",
+    source_sub_dir = "",
+    use_pipreqs = True,
+    include_modules = (),
+    exclude_modules = (),
+    install_only_these_modules = (),
+    use_existing_requirements = False,
+    extra_pip_install_args = (),
+    path_to_get_pip_and_python_embeded_zip = ""
+):
+    """ Calling all funcs needed and processing options """
+    input_dir = os.path.abspath(input_dir)
+    build_dir = os.path.abspath(build_dir)
+    pydist_sub_dir = build_dir if pydist_sub_dir == "" else os.path.join(build_dir, pydist_sub_dir)
+    source_sub_dir = build_dir if source_sub_dir == "" else os.path.join(build_dir, source_sub_dir)
+    base_dir_req_file = os.path.join(input_dir, "requirements.txt")
+    build_req_file = os.path.join(build_dir, "requirements.txt")
+
+    display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
+                               install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
+                               use_existing_requirements, use_pipreqs)
+    GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = find_required_install_files(
+        path_to_get_pip_and_python_embeded_zip=path_to_get_pip_and_python_embeded_zip
+    )
+    prepare_empty_build_dir(build_dir=build_dir)
+    prepare_build_requirements_file(
+        input_dir=input_dir,
+        build_req_file=build_req_file,
+        use_existing_requirements=use_existing_requirements,
+        use_pipreqs=use_pipreqs,
+        exclude_modules=exclude_modules,
+        include_modules=include_modules,
+        install_only_these_modules=install_only_these_modules
+    )
+    put_code_in_dist_folder(
+        source_dir=input_dir,
+        target_dir=source_sub_dir,
+        build_dir=build_dir
+    )
+    add_embeded_and_pip_to_dist(
+        get_pip_file=GET_PIP_PATH,
+        embedded_python_file=PYTHON_EMBEDED_PATH,
+        pydist_dir=pydist_sub_dir
+    )
+    make_startup_batch(
+        main_file_name=main_file_name,
+        show_console=show_console,
+        build_dir=build_dir,
+        relative_pydist_dir="" if pydist_sub_dir == build_dir else pydist_sub_dir.replace(build_dir, "") + "\\",
+        relative_source_dir="" if source_sub_dir == build_dir else source_sub_dir.replace(build_dir, "") + "\\"
+    )
+    prepare_for_pip_install(
+        pth_file=os.path.join(pydist_sub_dir, pth_file),
+        zip_pyfile=os.path.join(pydist_sub_dir, zip_pyfile)
+    )
+    install_requirements(
+        pydist_dir=pydist_sub_dir,
+        req_file=build_req_file,
+        extra_pip_install_args=extra_pip_install_args
+    )
     
-    os.chdir(BASE_DIR)
-    
-    print("\n\nFinished! Folder 'dist' contains your runnable application!\n\n")
+    print(f"\n\nFinished! Folder '{build_dir}' contains your runnable application!\n\n")
+    print("===END PYVAN BUILD===")
 
 
 # In[ ]:
