@@ -28,6 +28,7 @@ import pyvan
 OPTIONS = {"main_file_name": "main.py", 
             "show_console": False,
             "use_existing_requirements": False,
+            "extra_pip_install_args": [],
             "use_pipreqs": True,
             "install_only_these_modules": [],
             "exclude_modules": [],
@@ -47,6 +48,9 @@ pyvan.build(OPTIONS)
 
 * **use_existing_requirements**: True, ==> if specified pyvan will use an existing requirements.txt file instead of generating one using the: 
                                        use_pipreqs, install_only_these_modules, exclude_modules, and include_modules options
+
+* **extra_pip_install_args**: [], ==> pyvan will append the provided arguments to the pip install command during installation of the stand-alone distribution. 
+                                  The arguments should be specified as a list of strings (for example: `["-f", "/local/dir"]`) 
 
 * **use_pipreqs**: True,         ==> pipreqs tries to minimize the size of your app by looking at your imports 
                                  (best way is to use a virtualenv to ensure a smaller size, if fails will do pip freeze)

@@ -154,8 +154,11 @@ def prepare_for_pip_install(pth_file, zip_pyfile):
 # In[ ]:
 
 
-def install_requirements():
-    """Install pip and the modules from requirements.txt file"""
+def install_requirements(extra_pip_install_args = None):
+    """
+        Install pip and the modules from requirements.txt file
+        - extra_pip_install_args (optional `List[str]`) : pass these additional arguments to the pip install command
+    """
     
     print("Installing pip..")
 
@@ -169,19 +172,23 @@ def install_requirements():
     os.chdir("Scripts")
     print("Moved runtime to Scripts folder: ", os.getcwd())
 
+    if extra_pip_install_args is not None:
+        extra_args_str = " " + " ".join(extra_pip_install_args)
+    else:
+        extra_args_str = ""
+
     try:
-        cmd = "pip3.exe install --no-cache-dir --no-warn-script-location -r ../requirements.txt"
+        cmd = "pip3.exe install --no-cache-dir --no-warn-script-location -r ../requirements.txt" + extra_args_str
         execute_os_command(cmd)
     except:
-        
         print("Installing modules one by one..")
-        
+
         with open("../requirements.txt", "r") as f:
             modules = f.read().splitlines()
-        
+
         for module in modules:
             try:
-                cmd = "pip3.exe install --no-cache-dir --no-warn-script-location " + module
+                cmd = "pip3.exe install --no-cache-dir --no-warn-script-location " + module + extra_args_str
                 execute_os_command(cmd)
             except:
                 print("FAILED TO INSTALL ", module)
@@ -287,7 +294,7 @@ def build(OPTIONS):
 
     make_startup_batch(OPTIONS)
     prepare_for_pip_install(pth_file, zip_pyfile)
-    install_requirements()
+    install_requirements(extra_pip_install_args=OPTIONS.get("extra_pip_install_args", []))
     
     os.chdir(BASE_DIR)
     
