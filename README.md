@@ -23,28 +23,33 @@ Make a "van.py" file next to the "main.py" file (entry point of your program)
 Paste the code bellow:
 
 ```py
-import pyvan 
+import pyvan
 
-OPTIONS = {"main_file_name": "main.py", 
-            "show_console": False,
-            "use_existing_requirements": False,
-            "extra_pip_install_args": [],
-            "use_pipreqs": True,
-            "install_only_these_modules": [],
-            "exclude_modules": [],
-            "include_modules": [],
-            "path_to_get_pip_and_python_embeded_zip": ""
-            }
+OPTIONS = {
+    "main_file_name": "main.py",
+    "show_console": False,
+    "use_existing_requirements": False,
+    "extra_pip_install_args": [],
+    "use_pipreqs": True,
+    "install_only_these_modules": [],
+    "exclude_modules": [],
+    "include_modules": [],
+    "path_to_get_pip_and_python_embedded_zip": "",
+    "build_dir": "dist",
+    "pydist_sub_dir": "pydist",
+    "source_sub_dir": "",
+}
 
-pyvan.build(OPTIONS)
+pyvan.build(**OPTIONS)
+
  
 ```
 
 ### Configurations
 
-* **main_file_name**: "main.py", ==> the entry point of the application
+* **main_file_name**: "main.py",  ==> the entry point of the application
 
-* **show_console**: True,        ==> show console window or not (for a service or GUI app)
+* **show_console**: True,         ==> show console window or not (for a service or GUI app)
 
 * **use_existing_requirements**: True, ==> if specified pyvan will use an existing requirements.txt file instead of generating one using the: 
                                        use_pipreqs, install_only_these_modules, exclude_modules, and include_modules options
@@ -52,8 +57,8 @@ pyvan.build(OPTIONS)
 * **extra_pip_install_args**: [], ==> pyvan will append the provided arguments to the pip install command during installation of the stand-alone distribution. 
                                   The arguments should be specified as a list of strings (for example: `["-f", "/local/dir"]`) 
 
-* **use_pipreqs**: True,         ==> pipreqs tries to minimize the size of your app by looking at your imports 
-                                 (best way is to use a virtualenv to ensure a smaller size, if fails will do pip freeze)
+* **use_pipreqs**: True,          ==> pipreqs tries to minimize the size of your app by looking at your imports 
+                                  (best way is to use a virtualenv to ensure a smaller size, if fails will do pip freeze)
   
 * **install_only_these_modules**: [], ==> pyvan will install only the modules mentioned here
 
@@ -61,7 +66,15 @@ pyvan.build(OPTIONS)
 
 * **include_modules**: [],        ==> modules to include in the bundle
 
-* **path_to_get_pip_and_python_embeded_zip** ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
+* **path_to_get_pip_and_python_embedded_zip**: "", ==> by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
+
+* **build_dir**: "dist",          ==> the directory in which pyvan will create the stand-alone distribution
+
+* **pydist_sub_dir**: "pydist",   ==> a sub directory relative to `build_dir` where the stand-alone python distribution will be installed, if left empty this is the same as the `build-dir` 
+
+* **source_sub_dir**: "",         ==> a sub directory relative to `build_dir` where the to execute python files will be installed, if left empty this is the same as the `build-dir` 
+
+* **input_dir**: ".",             ==> the directory to get the main_file_name file from, by default this is the current working directory 
 
 * **icon_location**: "TODO" ==> for now pyvan will create a .bat file which links the main_file_name with python.exe
                             in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
