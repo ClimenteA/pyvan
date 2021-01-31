@@ -429,54 +429,54 @@ def build(
     "show_console",
     is_flag=True,
     default=True,
-    help="whether to hide the console window when running the application, e.g. for a service or GUI app"
+    help="Specify to hide the console window when running the application, e.g. for a service or GUI app"
 )
 @click.option(
     "--use-existing-reqs",
     "use_existing_requirements",
     is_flag=True,
     default=False,
-    help="whether to skip resolving the requirements.txt file but just search for one in the `input_dir`. Default: try to resolve requirements."
+    help="Specify to use an exsiting requirements.txt in the `input_dir` instead of trying to resolve the requirements automatically. Default: try to resolve requirements."
 )
 @click.option(
     "--no-pipreqs",
     "use_pipreqs",
     is_flag=True,
     default=True,
-    help="whether to skip pipreqs for resolving the requirements.txt file. Default use pipreqs."
+    help="Specify to skip using pipreqs for resolving the requirements.txt file. Default use pipreqs."
 )
 @click.option(
     "--input-dir",
     default=os.path.abspath(os.getcwd()),
     type=click.Path(exists=True, dir_okay=True, file_okay=False, resolve_path=True),
-    help="the directory with the `main_file_name` file and other files to install. Default: the current working directory."
+    help="The directory with the `main_file_name` file and other files to install. Default: the current working directory."
 )
 @click.option(
     "--build-dir",
     default=os.path.abspath(os.path.join(os.getcwd(), "dist")),
     type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
-    help="the directory in which pyvan will create the stand-alone distribution. Default: ./dist"
+    help="The directory in which pyvan will create the stand-alone distribution. Default: ./dist"
 )
 @click.option(
     "--pydist-sub-dir",
     "pydist_sub_dir",
     default="pydist",
     type=click.Path(exists=False),
-    help="a sub directory relative to `build_dir` where the stand-alone python distribution will be installed. Default: ./pydist"
+    help="A sub directory relative to `build_dir` where the stand-alone python distribution will be installed. Default: ./pydist"
 )
 @click.option(
     "--source-sub-dir",
     "source_sub_dir",
     default="",
     type=click.Path(exists=False),
-    help="a sub directory relative to `build_dir` where the to execute python files will be installed. Default: `build_dir`"
+    help="A sub directory relative to `build_dir` where the to execute python files will be installed. Default: `build_dir`"
 )
 @click.option(
     "--embedded-files-dir",
     "path_to_get_pip_and_python_embedded_zip",
     default=None,
     type=click.Path(exists=True, dir_okay=True, file_okay=False, resolve_path=True),
-    help="the directory which should contain 'get-pip.py' and the 'python-x.x.x-embed-amdxx.zip' files. Default: is the users Download directory."
+    help="The directory which should contain 'get-pip.py' and the 'python-x.x.x-embed-amdxx.zip' files. Default: is the users Download directory."
 )
 @click.option(
     "--req-install-only",
