@@ -7,7 +7,7 @@
 </p>
 
 
-[![Downloads](https://pepy.tech/badge/pyvan)](https://pepy.tech/project/pyvan)
+[![Downloads](https://pepy.tech/badge/pyvan)](https://pepy.tech/project/pyvan) [![PyPI](https://img.shields.io/pypi/v/pyvan?color=blue)](https://pypi.org/project/pyvan/)
 
 
 ### Install
@@ -59,8 +59,8 @@ exclude\_modules|[]|modules to exclude from bundle
 include\_modules|[]|modules to include in the bundle
 path\_to\_get\_pip\_and\_python\_embedded\_zip|''|by default is the Download path (path to 'get-pip.py' and 'python-x.x.x-embed-amdxx.zip' files)
 build\_dir|dist|the directory in which pyvan will create the stand-alone distribution
-pydist\_sub\_dir|pydist|a sub directory relative to `build\_dir` where the stand-alone python distribution will be installed
-source\_sub\_dir|''|a sub directory relative to `build\_dir` where the to execute python files will be installed
+pydist\_sub\_dir|pydist|a sub directory relative to `build_dir` where the stand-alone python distribution will be installed
+source\_sub\_dir|''|a sub directory relative to `build_dir` where the to execute python files will be installed
 input\_dir|'.'|the directory to get the main\_file\_name file from
 icon\_location|TODO|for now pyvan will create a .bat file which links the main\_file\_name with python.exe in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
 
