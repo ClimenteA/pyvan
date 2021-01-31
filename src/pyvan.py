@@ -9,7 +9,7 @@ import os, sys
 import shutil
 import zipfile
 import subprocess
-
+import click
 
 # In[ ]:
 
@@ -418,37 +418,147 @@ def build(
 # In[ ]:
 
 
-# modules_to_install = ["flask",
-#                       "pandas",
-#                       "flaskwebgui",
-#                       "plotly",
-#                       "xlrd",
-#                       "xlwt",
-#                       "openpyxl",
-#                      ]
+@click.command(name="cli")
+@click.argument(
+    "main_file_name",
+    type=click.Path(exists=False, dir_okay=False)
+)
+@click.option(
+    "--no-console",
+    "-nc",
+    "show_console",
+    is_flag=True,
+    default=True,
+    help="whether to hide the console window when running the application, e.g. for a service or GUI app"
+)
+@click.option(
+    "--use-existing-reqs",
+    "use_existing_requirements",
+    is_flag=True,
+    default=False,
+    help="whether to skip resolving the requirements.txt file but just search for one in the `input_dir`. Default: try to resolve requirements."
+)
+@click.option(
+    "--no-pipreqs",
+    "use_pipreqs",
+    is_flag=True,
+    default=True,
+    help="whether to skip pipreqs for resolving the requirements.txt file. Default use pipreqs."
+)
+@click.option(
+    "--input-dir",
+    default=os.path.abspath(os.getcwd()),
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, resolve_path=True),
+    help="the directory with the `main_file_name` file and other files to install. Default: the current working directory."
+)
+@click.option(
+    "--build-dir",
+    default=os.path.abspath(os.path.join(os.getcwd(), "dist")),
+    type=click.Path(exists=False, dir_okay=True, file_okay=False, resolve_path=True),
+    help="the directory in which pyvan will create the stand-alone distribution. Default: ./dist"
+)
+@click.option(
+    "--pydist-sub-dir",
+    "pydist_sub_dir",
+    default="pydist",
+    type=click.Path(exists=False),
+    help="a sub directory relative to `build_dir` where the stand-alone python distribution will be installed. Default: ./pydist"
+)
+@click.option(
+    "--source-sub-dir",
+    "source_sub_dir",
+    default="",
+    type=click.Path(exists=False),
+    help="a sub directory relative to `build_dir` where the to execute python files will be installed. Default: `build_dir`"
+)
+@click.option(
+    "--embedded-files-dir",
+    "path_to_get_pip_and_python_embedded_zip",
+    default=None,
+    type=click.Path(exists=True, dir_okay=True, file_okay=False, resolve_path=True),
+    help="the directory which should contain 'get-pip.py' and the 'python-x.x.x-embed-amdxx.zip' files. Default: is the users Download directory."
+)
+@click.option(
+    "--req-install-only",
+    "-r",
+    "install_only_these_modules",
+    default=(),
+    multiple=True,
+    type=str,
+    help="Specify these to directly generate a requirements.txt file using the specified modules. Default: [], use pipreqs."
+)
+@click.option(
+    "--req-include",
+    "-i",
+    "include_modules",
+    default=(),
+    multiple=True,
+    type=str,
+    help="Specify these to directly add additional modules to a generated requirements.txt file. Default: []."
+)
+@click.option(
+    "--req-exclude",
+    "-e",
+    "exclude_modules",
+    default=(),
+    multiple=True,
+    type=str,
+    help="Specify these to directly remove modules from a generated requirements.txt file. Default: []."
+)
+@click.option(
+    "--pip-install-arg",
+    "-a",
+    "extra_pip_install_args",
+    default=(),
+    multiple=True,
+    type=str,
+    help="These arguments will be added to the pip install command during the stand-alone distribution build and allow the user to specify additional arguments this way. Default: []."
+)
+def cli(
+    main_file_name,
+    show_console,
+    input_dir,
+    build_dir,
+    pydist_sub_dir,
+    source_sub_dir,
+    use_pipreqs,
+    include_modules,
+    exclude_modules,
+    install_only_these_modules,
+    use_existing_requirements,
+    extra_pip_install_args,
+    path_to_get_pip_and_python_embedded_zip
+):
+    """
+    Package your python script(s) as a stand-alone Windows application.
+
+    Basic usage:
+
+    $ pyvan main.py
+
+    This command will try to make main.py the entrypoint of your application.
+    It will automatically try to resolve the required requirements by running `pipreqs` in your `input_dir`.
+    Next, it will attempt to search and install an embedded python distribution using the generated requirements.
+    Finally, it will link the packaged sources to the packaged python distribution using a batch file.
+    The stand-alone application can then be found inside the generated `build_dir` ("dist") folder.
+
+    """
+    build(
+        main_file_name=main_file_name,
+        show_console=show_console,
+        input_dir=input_dir,
+        build_dir=build_dir,
+        pydist_sub_dir=pydist_sub_dir,
+        source_sub_dir=source_sub_dir,
+        use_pipreqs=use_pipreqs,
+        include_modules=include_modules,
+        exclude_modules=exclude_modules,
+        install_only_these_modules=install_only_these_modules,
+        use_existing_requirements=use_existing_requirements,
+        extra_pip_install_args=extra_pip_install_args,
+        path_to_get_pip_and_python_embedded_zip="" if path_to_get_pip_and_python_embedded_zip is None else path_to_get_pip_and_python_embedded_zip
+    )
 
 
-# In[ ]:
-
-
-# OPTIONS = {"main_file_name": "meckan.py", 
-#            "show_console": False,
-#            "use_pipreqs": True,
-#            "install_only_these_modules": [],
-#            "include_modules":[],
-#            "exclude_modules":[],
-#            "path_to_get_pip_and_python_embeded_zip": ""
-#           }
-
-
-# In[ ]:
-
-
-# build(OPTIONS)
-
-
-# In[ ]:
-
-
-
-
+if __name__ == "__main__":
+    cli()
