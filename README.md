@@ -18,6 +18,16 @@ or download [pyvan.py](https://raw.githubusercontent.com/ClimenteA/pyvan/master/
 
 ### Usage
 
+Using the command line:
+
+`pyvan main.py`
+
+You can see available flags with:
+
+`pyvan --help`
+
+*or*
+
 Make a "van.py" file next to the "main.py" file (entry point of your program) 
 
 Paste the code bellow:
@@ -45,6 +55,7 @@ pyvan.build(**OPTIONS)
  
 ```
 
+
 ### Configurations
 
 **Option**|**Default**|**Description**
@@ -63,6 +74,9 @@ pydist\_sub\_dir|pydist|a sub directory relative to `build_dir` where the stand-
 source\_sub\_dir|''|a sub directory relative to `build_dir` where the to execute python files will be installed
 input\_dir|'.'|the directory to get the main\_file\_name file from
 icon\_location|TODO|for now pyvan will create a .bat file which links the main\_file\_name with python.exe in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
+
+
+Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options and adding support for CLI commands.
 
 
 If pyvan didn't managed to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
