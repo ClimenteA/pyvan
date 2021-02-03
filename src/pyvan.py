@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
+#!/usr/bin/env python3
 
 import time
 import os, sys
@@ -11,18 +7,13 @@ import zipfile
 import subprocess
 import click
 
-# In[ ]:
 
-
-header_no_console = """import sys, os
+HEADER_NO_CONSOLE = """import sys, os
 if sys.executable.endswith('pythonw.exe'):
     sys.stdout = open(os.devnull, 'w')
     sys.stderr = open(os.path.join(os.getenv(\'TEMP\'), \'stderr-{}\'.format(os.path.basename(sys.argv[0]))), "w")
     
 """
-
-
-# In[ ]:
 
 
 def execute_os_command(command, cwd=None):
@@ -49,9 +40,6 @@ def execute_os_command(command, cwd=None):
         raise Exception(command, exitCode, output)
 
 
-# In[ ]:
-
-
 def put_code_in_dist_folder(source_dir, target_dir, build_dir):
     """Copy .py files and others to target folder"""
     if not os.path.isdir(os.path.dirname(target_dir)):
@@ -66,9 +54,6 @@ def put_code_in_dist_folder(source_dir, target_dir, build_dir):
     print("Files copied!")
 
 
-# In[ ]:
-
-
 def prep_requirements(use_pipreqs, target_req_file, input_dir, build_dir):
     """ Create requirements.txt file from which to install modules on embeded python version """
 
@@ -80,9 +65,6 @@ def prep_requirements(use_pipreqs, target_req_file, input_dir, build_dir):
         print("Searching modules needed using 'pip freeze'...")
         execute_os_command(command=f"pip3.exe freeze > {target_req_file}", cwd=input_dir)
         print("Done!")
-
-
-# In[ ]:
 
 
 def filter_requirements(target_req_file, include_modules, exclude_modules):
@@ -105,9 +87,6 @@ def filter_requirements(target_req_file, include_modules, exclude_modules):
     print(f"File {target_req_file} done!")
 
 
-# In[ ]:
-
-
 def add_embeded_and_pip_to_dist(get_pip_file, embedded_python_file, pydist_dir):
     """ Copy embeded python and get-pip file to dist folder """
     
@@ -119,9 +98,6 @@ def add_embeded_and_pip_to_dist(get_pip_file, embedded_python_file, pydist_dir):
 
     shutil.copy2(get_pip_file, pydist_dir)
     print(f"File {get_pip_file} file copied to {pydist_dir}!")
-
-
-# In[ ]:
 
 
 def prepare_for_pip_install(pth_file, zip_pyfile):
@@ -153,9 +129,6 @@ def prepare_for_pip_install(pth_file, zip_pyfile):
             time.sleep(0.3)
 
     print(f"Zip file extracted to {zip_pyfile} folder!")
-
-
-# In[ ]:
 
 
 def install_requirements(pydist_dir, build_dir, req_file, extra_pip_install_args = None):
@@ -198,9 +171,6 @@ def install_requirements(pydist_dir, build_dir, req_file, extra_pip_install_args
                     f.write(str(module + "\n"))
 
 
-# In[ ]:
-
-
 def make_startup_batch(main_file_name, show_console, build_dir, relative_pydist_dir, relative_source_dir):
     """ Make the startup batch files needed to run the script """
     
@@ -215,17 +185,14 @@ def make_startup_batch(main_file_name, show_console, build_dir, relative_pydist_
         with open(main_file_name, "r", encoding="utf8", errors="surrogateescape") as f:
             main_content = f.read()
 
-        if header_no_console not in main_content:
+        if HEADER_NO_CONSOLE not in main_content:
             with open(main_file_name, "w", encoding="utf8", errors="surrogateescape") as f:
-                f.write(str(header_no_console + main_content))
+                f.write(str(HEADER_NO_CONSOLE + main_content))
 
         with open(bat_fname, "w") as f:
             f.write(str(f"START %~dp0/{relative_pydist_dir}pythonw %~dp0/{relative_source_dir}{main_file_name} %*"))
 
     print("Done!")
-
-
-# In[ ]:
 
 
 def find_required_install_files(path_to_get_pip_and_python_embedded_zip):
@@ -257,9 +224,6 @@ def find_required_install_files(path_to_get_pip_and_python_embedded_zip):
     print(f"Using {PYTHON_VERSION} from:\n {GET_PIP_PATH} \n {PYTHON_EMBEDED_PATH}")
     
     return GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile
-
-
-# In[ ]:
 
 
 def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
@@ -294,18 +258,12 @@ def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_
     print(f"===START PYVAN BUILD===")
 
 
-# In[ ]:
-
-
 def prepare_empty_build_dir(build_dir):
     # Delete build folder if it exists
     if os.path.isdir(build_dir):
         print(f"Existing build directory found, removing contents... {build_dir}")
         shutil.rmtree(build_dir)
     os.makedirs(build_dir)
-
-
-# In[ ]:
 
 
 def prepare_build_requirements_file(input_dir, build_dir, build_req_file, use_existing_requirements, exclude_modules,
@@ -336,9 +294,6 @@ def prepare_build_requirements_file(input_dir, build_dir, build_req_file, use_ex
     else:
         with open(build_req_file, 'w') as f:
             f.write("\n".join(install_only_these_modules))
-
-
-# In[ ]:
 
 
 def build(
@@ -413,9 +368,6 @@ def build(
     
     print(f"\n\nFinished! Folder '{build_dir}' contains your runnable application!\n\n")
     print("===END PYVAN BUILD===")
-
-
-# In[ ]:
 
 
 @click.command(name="cli")
