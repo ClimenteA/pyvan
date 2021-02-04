@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-
+import re
 import time
-import os, sys
+import os
+import sys
 import shutil
 import zipfile
 import subprocess
 import click
+import requests
 
 
+# python_version can be anything of the form: `x.x.x` where any x may be set to a positive integer.
+PYTHON_VERSION_REGEX = re.compile(r"^(\d+|x)\.(\d+|x)\.(\d+|x)$")
+GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
+PYTHON_URL = "https://www.python.org/ftp/python"
 HEADER_NO_CONSOLE = """import sys, os
 if sys.executable.endswith('pythonw.exe'):
     sys.stdout = open(os.devnull, 'w')
@@ -31,13 +37,13 @@ def execute_os_command(command, cwd=None):
         sys.stdout.flush()
 
     output = process.communicate()[0]
-    exitCode = process.returncode
+    exit_code = process.returncode
 
-    if (exitCode == 0):
+    if exit_code == 0:
         print(output)
         return output
     else:
-        raise Exception(command, exitCode, output)
+        raise Exception(command, exit_code, output)
 
 
 def put_code_in_dist_folder(source_dir, target_dir, build_dir):
@@ -102,7 +108,7 @@ def add_embeded_and_pip_to_dist(get_pip_file, embedded_python_file, pydist_dir):
 
 def prepare_for_pip_install(pth_file, zip_pyfile):
     """
-        Prepare the extracted embeded python version for pip instalation
+        Prepare the extracted embedded python version for pip installation
         - Uncommented 'import site' line from pythonXX._pth file
         - Extract pythonXX.zip zip file to pythonXX.zip folder and delete pythonXX.zip zip file
     """
@@ -195,40 +201,97 @@ def make_startup_batch(main_file_name, show_console, build_dir, relative_pydist_
     print("Done!")
 
 
-def find_required_install_files(path_to_get_pip_and_python_embedded_zip):
-    
-    #Get the path to python emebeded zip file and get-pip.py file
+def download_url(url, save_path, chunk_size=128):
+    """Download streaming a file url to save_path"""
+
+    r = requests.get(url, stream=True)
+    with open(save_path, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            fd.write(chunk)
+
+
+def get_all_available_python_versions():
+    r = requests.get("https://www.python.org/ftp/python/")
+    result = [tuple([int(e) for e in v.split(".")]) for v in re.findall(r">(\d+\.\d+\.\d+)/<", r.text)]
+    return [v for v in sorted(result)]  # lowest to highest
+
+
+def resolve_python_version(python_version):
+    """
+    Based on a python_version string resolve all the unknowns
+    python_version (str) :
+        can be None or of the form `x.x.x` where x may be an positive integer
+        This method will attempt to resolve all the x's to the highest possible numbers.
+
+        Note: In the case None is passed as the input
+        the highest version of Python before the last minor release will be used.
+
+    """
+
+    if python_version is not None:
+        if not re.match(PYTHON_VERSION_REGEX, python_version):
+            raise ValueError("Specified python_version does not have the correct format, it should be of format: `x.x.x` where x can be replaced with a positive number.")
+        version_strs = python_version.split(".")
+        needs_resolving = any([e == "x" for e in version_strs])
+        if not needs_resolving:
+            return tuple(map(int, version_strs))
+    # all other options need resolving
+    all_py_versions = get_all_available_python_versions()
+    if len(all_py_versions) == 0:
+        raise RuntimeError("All available Python versions returned an empty list, this should not happen!")
+    if python_version is None:
+        max_py_version = all_py_versions[-1]
+        py_versions = [v for v in all_py_versions if max_py_version[1] - 1 == v[1]]  # pick candidates one minor version less than the max
+        return py_versions[-1]
+    else:
+        py_versions = all_py_versions
+        for i, e in enumerate(python_version.split(".")):
+            if e != "x":
+                py_versions = [v for v in py_versions if v[i] == int(e)]
+        if len(py_versions) > 0:
+            return py_versions[-1]
+        else:
+            raise ValueError(f"Python version: {python_version} does not exists within the available Python versions list.")
+
+
+def find_or_download_required_install_files(path_to_get_pip_and_python_embedded_zip, python_version):
+    # Get the path to python embedded zip file and get-pip.py file
     if path_to_get_pip_and_python_embedded_zip == "":
-        FILES_PATH = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
+        files_path = os.path.join(os.getenv('USERPROFILE'), 'Downloads')
     else:
-        FILES_PATH = path_to_get_pip_and_python_embedded_zip
+        files_path = path_to_get_pip_and_python_embedded_zip
 
-    if 'get-pip.py' not in os.listdir(FILES_PATH):
-        raise FileNotFoundError(f"'get-pip.py' not found in {FILES_PATH}")
-    else:
-        GET_PIP_PATH = os.path.join(FILES_PATH, 'get-pip.py')
+    get_pip_path = os.path.join(files_path, 'get-pip.py')
+    if 'get-pip.py' not in os.listdir(files_path):
+        print(f"'get-pip.py' not found in {files_path}, attempting to download it...")
+        download_url(url=GET_PIP_URL, save_path=get_pip_path)
+        if not os.path.isfile(get_pip_path):
+            raise RuntimeError(f"Could not find get-pip.py in folder: {files_path}, and the download failed...")
 
-    PYTHON_EMBEDED_PATH = None
-    for file in os.listdir(FILES_PATH):
-        if "python" in file and "embed" in file and file.endswith(".zip"):
-            PYTHON_EMBEDED_PATH = os.path.join(FILES_PATH, file)
-            PYTHON_VERSION = "python" + file.split("-")[1].replace(".", "")[:2]
-            break
+    resolved_python_version = resolve_python_version(python_version=python_version)
+    print(f"Resolved python_version {python_version}: {resolved_python_version}")
 
-    if not PYTHON_VERSION:
-        raise FileNotFoundError(f"'python-x.x.x-embed-xxxxx.zip' not found in {FILES_PATH}")
+    python_version_str = "{v[0]}.{v[1]}.{v[2]}".format(v=resolved_python_version)
+    embedded_file_name = f"python-{python_version_str}-embed-amd64.zip"
+    embedded_path_file = os.path.join(files_path, embedded_file_name)
+    if not os.path.isfile(embedded_path_file):
+        print(f"{embedded_file_name} not found int {files_path}, attempting to download it.")
+        download_url(url=f"{PYTHON_URL}/{python_version_str}/{embedded_file_name}", save_path=embedded_path_file)
+        if not os.path.isfile(embedded_path_file):
+            raise RuntimeError(f"Could not find {embedded_file_name} in folder: {files_path}, and the download failed...")
 
-    pth_file   = PYTHON_VERSION + "._pth"
-    zip_pyfile = PYTHON_VERSION + ".zip"
+    short_python_version_str = "python" + python_version_str.replace(".", "")[:2]
+    pth_file   = short_python_version_str + "._pth"
+    zip_pyfile = short_python_version_str + ".zip"
 
-    print(f"Using {PYTHON_VERSION} from:\n {GET_PIP_PATH} \n {PYTHON_EMBEDED_PATH}")
+    print(f"Using Python-{python_version_str} from:\n {get_pip_path} \n {embedded_path_file}")
     
-    return GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile
+    return get_pip_path, embedded_path_file, pth_file, zip_pyfile
 
 
 def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
                                install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
-                               use_existing_requirements, use_pipreqs):
+                               use_existing_requirements, use_pipreqs, python_version):
     print(f"===PYVAN BUILD CONFIGURATION===")
     print(f"Input dir: {input_dir}")
     print(f"Build dir: {build_dir}")
@@ -246,6 +309,10 @@ def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_
         print(f"include_modules: {include_modules}")
         print(f"exclude_modules: {exclude_modules}")
     print("===BUILD OPTIONS===")
+    if python_version is not None:
+        print(f"pyvan will attempt to install python version: {python_version}")
+    else:
+        print(f"no python version specified - pyvan will attempt to install latest stable python version")
     print(f"requirements will be installed with{'' if any(extra_pip_install_args) else 'out'} additional pip arguments")
     if any(extra_pip_install_args):
         print(f"extra_pip_install_args: {extra_pip_install_args}")
@@ -303,6 +370,7 @@ def build(
     build_dir = os.path.join(os.getcwd(), "dist"),
     pydist_sub_dir = "",
     source_sub_dir = "",
+    python_version = None,
     use_pipreqs = True,
     include_modules = (),
     exclude_modules = (),
@@ -323,9 +391,9 @@ def build(
 
     display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
                                install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
-                               use_existing_requirements, use_pipreqs)
-    GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = find_required_install_files(
-        path_to_get_pip_and_python_embedded_zip=path_to_get_pip_and_python_embedded_zip
+                               use_existing_requirements, use_pipreqs, python_version)
+    GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = find_or_download_required_install_files(
+        path_to_get_pip_and_python_embedded_zip=path_to_get_pip_and_python_embedded_zip, python_version=python_version
     )
     prepare_empty_build_dir(build_dir=build_dir)
     prepare_build_requirements_file(
@@ -370,6 +438,15 @@ def build(
     print("===END PYVAN BUILD===")
 
 
+def validate_python_version_input(ctx, param, value):
+    if value is None:
+        return None
+    if re.match(PYTHON_VERSION_REGEX, value):
+       return value
+    else:
+        raise click.BadParameter("Python version must be of format: `x.x.x` where x may be a positive integer.")
+
+
 @click.command(name="cli")
 @click.argument(
     "main_file_name",
@@ -395,7 +472,16 @@ def build(
     "use_pipreqs",
     is_flag=True,
     default=True,
-    help="Specify to skip using pipreqs for resolving the requirements.txt file. Default use pipreqs."
+    help="Specify to skip using pipreqs for resolving the requirements.txt file. Default: use pipreqs."
+)
+@click.option(
+    "--python-version",
+    "-py",
+    "python_version",
+    type=str,
+    default=None,
+    help="Specify to fix the embedded python version number, format x.x.x with x a positive integer. Default: use highest available stable python version.",
+    callback=validate_python_version_input
 )
 @click.option(
     "--input-dir",
@@ -474,6 +560,7 @@ def cli(
     pydist_sub_dir,
     source_sub_dir,
     use_pipreqs,
+    python_version,
     include_modules,
     exclude_modules,
     install_only_these_modules,
@@ -503,6 +590,7 @@ def cli(
         pydist_sub_dir=pydist_sub_dir,
         source_sub_dir=source_sub_dir,
         use_pipreqs=use_pipreqs,
+        python_version=python_version,
         include_modules=include_modules,
         exclude_modules=exclude_modules,
         install_only_these_modules=install_only_these_modules,

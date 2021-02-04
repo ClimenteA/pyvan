@@ -18,7 +18,7 @@ setup(
     author_email="climente.alin@gmail.com",
     license="MIT",
     py_modules=["pyvan"],
-    install_requires=["pipreqs", "click"],
+    install_requires=["pipreqs", "click", "requests"],
     packages=find_packages(),
     long_description=long_description,
     long_description_content_type="text/markdown",
