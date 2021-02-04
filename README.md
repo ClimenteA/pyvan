@@ -40,6 +40,7 @@ OPTIONS = {
   "show_console": False,
   "use_existing_requirements": True,
   "extra_pip_install_args": [],
+  "python_version": None,
   "use_pipreqs": False,
   "install_only_these_modules": [],
   "exclude_modules": [],
@@ -64,6 +65,7 @@ main\_file\_name|*required*|the entry point of the application
 show\_console|True|show console window or not (for a service or GUI app)
 use\_existing\_requirements|True|if True pyvan will use an existing requirements.txt file instead of generating one using the: `use\_pipreqs
 extra\_pip\_install\_args|[]|pyvan will append the provided arguments to the pip install command during installation of the stand-alone distribution.The arguments should be specified as a list of strings
+python\_version|None|pyvan will attempt use the specified Python distribution for creating the stand-alone application, `3.8.x`, `3.9.1`, or `x.x.x` are valid formats
 use\_pipreqs|True|pipreqs tries to minimize the size of your app by looking at your imports (best way is to use a virtualenv to ensure a smaller size
 install\_only\_these\_modules|[]|pyvan will install only the modules mentioned here
 exclude\_modules|[]|modules to exclude from bundle
