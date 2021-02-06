@@ -78,10 +78,12 @@ input\_dir|'.'|the directory to get the main\_file\_name file from
 icon\_location|TODO|for now pyvan will create a .bat file which links the main\_file\_name with python.exe in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
 
 
-Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options and adding support for CLI commands.
+Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options, adding support for CLI commands and automating the download of get-pip.py and embeded python zip. 
 
 
 If pyvan didn't managed to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
+
+Since Mac and Linux have already Python installed pyvan focuses only on Windows.
 
 ### For creating a .exe with a custom icon checkout bellow repos:
 
@@ -96,5 +98,6 @@ If pyvan didn't managed to install all the modules needed go in dist/Scripts fol
 **pyvan** it's just one file which takes the embedded python version, installs the modules you need and makes a link using a .bat file between python(w).exe and your main.py script.
 <br>
 It's easy if something goes wrong for whatever reason you can just go in the dist folder and solve the issue the python way (because there is just python and your scripts :).
+
 
 **Submit any questions/issues you have! Fell free to fork it and improve it!**
