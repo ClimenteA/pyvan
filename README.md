@@ -49,6 +49,7 @@ OPTIONS = {
   "build_dir": "dist",
   "pydist_sub_dir": "pydist",
   "source_sub_dir": "",
+  "icon_file": None,
 }
 
 pyvan.build(**OPTIONS)
@@ -75,7 +76,7 @@ build\_dir|dist|the directory in which pyvan will create the stand-alone distrib
 pydist\_sub\_dir|pydist|a sub directory relative to `build_dir` where the stand-alone python distribution will be installed
 source\_sub\_dir|''|a sub directory relative to `build_dir` where the to execute python files will be installed
 input\_dir|'.'|the directory to get the main\_file\_name file from
-icon\_location|TODO|for now pyvan will create a .bat file which links the main\_file\_name with python.exe in the future will add something that will convert the .bat to .exe and you will be able to set it an icon too
+icon\_file|None|path to icon file to use for your application executable, doesn't use one by default 
 
 
 Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options, adding support for CLI commands and automating the download of get-pip.py and embeded python zip. 
@@ -84,13 +85,6 @@ Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending th
 If pyvan didn't managed to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
 
 Since Mac and Linux have already Python installed pyvan focuses only on Windows.
-
-### For creating a .exe with a custom icon checkout bellow repos:
-
-- https://github.com/tokyoneon/B2E
-- https://github.com/tywali/Bat2ExeConverter
-- https://github.com/DarrenRainey/battoexe
-- https://github.com/julianollivieira/b2executable
 
 
 ### Why pyvan?
