@@ -80,19 +80,19 @@ icon\_file|None|path to icon file to use for your application executable, doesn'
 
 
 **Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options, adding support for CLI commands, automating the download of get-pip.py, 
-embeded python zip and making posible the generation of an executable file!**
+embedded python zip and making possible the generation of an executable file!**
 
 I think pyvan is the only python bundler which makes possible shipping a python application along with a modifiable source code.
 
 
-If pyvan didn't managed to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
+If pyvan didn't manage to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
 
 Since Mac and Linux have already Python installed pyvan focuses only on Windows.
 
 
 ### Why pyvan?
 
-**pyvan** it's just one file which takes the embedded python version, installs the modules you need and makes a link using a .bat file between python(w).exe and your main.py script.
+**pyvan** it's just one file which takes the embedded python version, installs the modules you need and makes a link using a .exe file between python.exe and your main.py script.
 <br>
 It's easy if something goes wrong for whatever reason you can just go in the dist folder and solve the issue the python way (because there is just python and your scripts :).
 
