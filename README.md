@@ -20,11 +20,9 @@ or download [pyvan.py](https://raw.githubusercontent.com/ClimenteA/pyvan/master/
 
 Using the command line:
 
-`pyvan main.py`
+`pyvan main.py` or `pyvan main.py --no-console` for a gui application.
 
-You can see available flags with:
-
-`pyvan --help`
+You can see available flags with: `pyvan --help`
 
 *or*
 
