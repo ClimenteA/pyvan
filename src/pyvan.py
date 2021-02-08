@@ -8,6 +8,8 @@ import zipfile
 import subprocess
 import click
 import requests
+from pathlib import Path
+from genexe.generate_exe import generate_exe
 
 
 # python_version can be anything of the form: `x.x.x` where any x may be set to a positive integer.
@@ -177,26 +179,20 @@ def install_requirements(pydist_dir, build_dir, req_file, extra_pip_install_args
                     f.write(str(module + "\n"))
 
 
-def make_startup_batch(main_file_name, show_console, build_dir, relative_pydist_dir, relative_source_dir):
-    """ Make the startup batch files needed to run the script """
-    
-    print("Making startup batch files")
+def make_startup_exe(main_file_name, show_console, build_dir, relative_pydist_dir, relative_source_dir, icon_file=None):
+    """ Make the startup exe file needed to run the script """
+    print("Making startup exe file")
+    exe_fname = os.path.join(build_dir, main_file_name.split(".py")[0] + ".exe")
+    python_entrypoint = "python.exe"
+    command_str = f"{{EXE_DIR}}\\{relative_pydist_dir}\\{python_entrypoint} {{EXE_DIR}}\\{relative_source_dir}\\{main_file_name}"
+    generate_exe(target=Path(exe_fname), command=command_str, icon_file=None if icon_file is None else Path(icon_file), show_window=show_console)
 
-    bat_fname = os.path.join(build_dir, main_file_name.split(".py")[0] + ".bat")
-
-    if show_console:
-        with open(bat_fname, "w") as f:
-            f.write(str(f"START %~dp0/{relative_pydist_dir}python %~dp0/{relative_source_dir}{main_file_name} %*"))
-    else:
+    if not show_console:
         with open(main_file_name, "r", encoding="utf8", errors="surrogateescape") as f:
             main_content = f.read()
-
         if HEADER_NO_CONSOLE not in main_content:
             with open(main_file_name, "w", encoding="utf8", errors="surrogateescape") as f:
                 f.write(str(HEADER_NO_CONSOLE + main_content))
-
-        with open(bat_fname, "w") as f:
-            f.write(str(f"START %~dp0/{relative_pydist_dir}pythonw %~dp0/{relative_source_dir}{main_file_name} %*"))
 
     print("Done!")
 
@@ -291,7 +287,7 @@ def find_or_download_required_install_files(path_to_get_pip_and_python_embedded_
 
 def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
                                install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
-                               use_existing_requirements, use_pipreqs, python_version):
+                               use_existing_requirements, use_pipreqs, python_version, icon_file):
     print(f"===PYVAN BUILD CONFIGURATION===")
     print(f"Input dir: {input_dir}")
     print(f"Build dir: {build_dir}")
@@ -316,11 +312,15 @@ def display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_
     print(f"requirements will be installed with{'' if any(extra_pip_install_args) else 'out'} additional pip arguments")
     if any(extra_pip_install_args):
         print(f"extra_pip_install_args: {extra_pip_install_args}")
-    print(f"===BATCH FILE===")
-    print(f"pyvan will generate a batch file for you in {build_dir}")
+    print(f"===EXE FILE===")
+    print(f"pyvan will generate an exe file for you in {build_dir}")
     print(f"pyvan will use the following settings:")
     print(f"main_file_name: {main_file_name}")
     print(f"show_console: {show_console}")
+    if icon_file is not None:
+        print(f"icon_file: {icon_file}")
+    else:
+        print("no icon file was set.")
     print()
     print(f"===START PYVAN BUILD===")
 
@@ -368,7 +368,7 @@ def build(
     show_console = False,
     input_dir = os.getcwd(),
     build_dir = os.path.join(os.getcwd(), "dist"),
-    pydist_sub_dir = "",
+    pydist_sub_dir = "pydist",
     source_sub_dir = "",
     python_version = None,
     use_pipreqs = True,
@@ -377,7 +377,8 @@ def build(
     install_only_these_modules = (),
     use_existing_requirements = False,
     extra_pip_install_args = (),
-    path_to_get_pip_and_python_embedded_zip = ""
+    path_to_get_pip_and_python_embedded_zip = "",
+    icon_file = None
 ):
     """ Calling all funcs needed and processing options """
     if isinstance(main_file_name, dict):
@@ -391,7 +392,7 @@ def build(
 
     display_pyvan_build_config(input_dir, build_dir, exclude_modules, extra_pip_install_args, include_modules,
                                install_only_these_modules, main_file_name, pydist_sub_dir, show_console, source_sub_dir,
-                               use_existing_requirements, use_pipreqs, python_version)
+                               use_existing_requirements, use_pipreqs, python_version, icon_file)
     GET_PIP_PATH, PYTHON_EMBEDED_PATH, pth_file, zip_pyfile = find_or_download_required_install_files(
         path_to_get_pip_and_python_embedded_zip=path_to_get_pip_and_python_embedded_zip, python_version=python_version
     )
@@ -416,12 +417,13 @@ def build(
         embedded_python_file=PYTHON_EMBEDED_PATH,
         pydist_dir=pydist_sub_dir
     )
-    make_startup_batch(
+    make_startup_exe(
         main_file_name=main_file_name,
         show_console=show_console,
         build_dir=build_dir,
         relative_pydist_dir="" if pydist_sub_dir == build_dir else pydist_sub_dir.replace(build_dir, "") + "\\",
-        relative_source_dir="" if source_sub_dir == build_dir else source_sub_dir.replace(build_dir, "") + "\\"
+        relative_source_dir="" if source_sub_dir == build_dir else source_sub_dir.replace(build_dir, "") + "\\",
+        icon_file=icon_file,
     )
     prepare_for_pip_install(
         pth_file=os.path.join(pydist_sub_dir, pth_file),
@@ -552,6 +554,14 @@ def validate_python_version_input(ctx, param, value):
     type=str,
     help="These arguments will be added to the pip install command during the stand-alone distribution build and allow the user to specify additional arguments this way. Default: []."
 )
+@click.option(
+    "--icon-file",
+    "--icon",
+    "icon_file",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True, resolve_path=True),
+    help="An optional icon file to add to the generated executable for the stand-alone distribution. Default: don't use an icon"
+)
 def cli(
     main_file_name,
     show_console,
@@ -566,7 +576,8 @@ def cli(
     install_only_these_modules,
     use_existing_requirements,
     extra_pip_install_args,
-    path_to_get_pip_and_python_embedded_zip
+    path_to_get_pip_and_python_embedded_zip,
+    icon_file,
 ):
     """
     Package your python script(s) as a stand-alone Windows application.
@@ -596,6 +607,7 @@ def cli(
         install_only_these_modules=install_only_these_modules,
         use_existing_requirements=use_existing_requirements,
         extra_pip_install_args=extra_pip_install_args,
+        icon_file=icon_file,
         path_to_get_pip_and_python_embedded_zip="" if path_to_get_pip_and_python_embedded_zip is None else path_to_get_pip_and_python_embedded_zip
     )
 
