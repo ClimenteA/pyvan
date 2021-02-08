@@ -79,7 +79,12 @@ input\_dir|'.'|the directory to get the main\_file\_name file from
 icon\_file|None|path to icon file to use for your application executable, doesn't use one by default 
 
 
-Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options, adding support for CLI commands and automating the download of get-pip.py and embeded python zip. 
+
+
+**Thanks to [silvandeleemput](https://github.com/silvandeleemput) for extending the available options, adding support for CLI commands, automating the download of get-pip.py, 
+embeded python zip and making posible the generation of an executable file!**
+
+I think pyvan is the only python bundler which makes possible shipping a python application along with a modifiable source code.
 
 
 If pyvan didn't managed to install all the modules needed go in dist/Scripts folder and install them manually with `pip install module`
