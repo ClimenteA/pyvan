@@ -108,15 +108,16 @@ def add_embeded_and_pip_to_dist(get_pip_file, embedded_python_file, pydist_dir):
     print(f"File {get_pip_file} file copied to {pydist_dir}!")
 
 
-def prepare_for_pip_install(pth_file, zip_pyfile):
+def prepare_for_pip_install(pth_file, zip_pyfile, pydist_sub_dir_str, source_sub_dir_str):
     """
         Prepare the extracted embedded python version for pip installation
         - Uncommented 'import site' line from pythonXX._pth file
         - Extract pythonXX.zip zip file to pythonXX.zip folder and delete pythonXX.zip zip file
     """
-    print(f"Uncommented 'import site' line from '{pth_file}' file")
+    print(f"Generated '{pth_file}' file with uncommented 'import site' line.")
     with open(pth_file, 'w') as f:
-        f.write(f'{zip_pyfile}\n.\n\n# Uncomment to run site.main() automatically\nimport site\n')
+        rel_path_to_sources = ("." if pydist_sub_dir_str == "" else "..") + source_sub_dir_str
+        f.write(f'{os.path.basename(zip_pyfile)}\n{rel_path_to_sources}\n\n# Uncomment to run site.main() automatically\nimport site\n')
 
     print(f"Extracting {zip_pyfile} file")
 
@@ -423,11 +424,13 @@ def build(
         build_dir=build_dir,
         relative_pydist_dir="" if pydist_sub_dir == build_dir else pydist_sub_dir.replace(build_dir, "") + "\\",
         relative_source_dir="" if source_sub_dir == build_dir else source_sub_dir.replace(build_dir, "") + "\\",
-        icon_file=icon_file,
+        icon_file=icon_file
     )
     prepare_for_pip_install(
         pth_file=os.path.join(pydist_sub_dir, pth_file),
-        zip_pyfile=os.path.join(pydist_sub_dir, zip_pyfile)
+        zip_pyfile=os.path.join(pydist_sub_dir, zip_pyfile),
+        pydist_sub_dir_str=pydist_sub_dir.replace(build_dir, ""),
+        source_sub_dir_str=source_sub_dir.replace(build_dir, "")
     )
     install_requirements(
         pydist_dir=pydist_sub_dir,
