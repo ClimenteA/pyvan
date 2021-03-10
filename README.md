@@ -19,12 +19,22 @@ or download [pyvan.py](https://raw.githubusercontent.com/ClimenteA/pyvan/master/
 ### Usage
 
 Using the command line:
+```py
+pyvan main.py 
+```
+For a gui application add `--no-console` flag:
 
-`pyvan main.py` or `pyvan main.py --no-console` for a gui application.
+```py
+pyvan main.py --no-console
+```
 
-You can see available flags with: `pyvan --help`
+You can see available flags with: 
 
-*or*
+```py
+pyvan --help
+```
+
+*Or*
 
 Make a "van.py" file next to the "main.py" file (entry point of your program) 
 
