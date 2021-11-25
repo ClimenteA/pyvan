@@ -14,7 +14,7 @@
 ```py
 pip install pyvan
 ```
-or download [pyvan.py](https://raw.githubusercontent.com/ClimenteA/pyvan/master/src/pyvan.py) file.
+Make sure you have Python 3.8 or above.
 
 ### Usage
 
