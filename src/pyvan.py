@@ -277,7 +277,7 @@ def find_or_download_required_install_files(path_to_get_pip_and_python_embedded_
         if not os.path.isfile(embedded_path_file):
             raise RuntimeError(f"Could not find {embedded_file_name} in folder: {files_path}, and the download failed...")
 
-    short_python_version_str = "python" + python_version_str.replace(".", "")[:2]
+    short_python_version_str = "python" + "{v[0]}.{v[1]}".format(v=resolved_python_version).replace(".", "")
     pth_file   = short_python_version_str + "._pth"
     zip_pyfile = short_python_version_str + ".zip"
 
