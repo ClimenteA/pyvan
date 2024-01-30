@@ -185,7 +185,7 @@ def make_startup_exe(main_file_name, show_console, build_dir, relative_pydist_di
     print("Making startup exe file")
     exe_fname = os.path.join(build_dir, main_file_name.split(".py")[0] + ".exe")
     python_entrypoint = "python.exe"
-    command_str = f"{{EXE_DIR}}\\{relative_pydist_dir}\\{python_entrypoint} {{EXE_DIR}}\\{relative_source_dir}\\{main_file_name}"
+    command_str = f"\"\"{{EXE_DIR}}\\{relative_pydist_dir}\\{python_entrypoint}\" \"{{EXE_DIR}}\\{relative_source_dir}\\{main_file_name}\"\""
     generate_exe(target=Path(exe_fname), command=command_str, icon_file=None if icon_file is None else Path(icon_file), show_console=show_console)
 
     if not show_console:
