@@ -40,7 +40,8 @@ Make a "van.py" file next to the "main.py" file (entry point of your program)
 
 Paste the code bellow:
 
-```py
+```python
+
 import pyvan
 
 OPTIONS = {
@@ -58,6 +59,7 @@ OPTIONS = {
   "pydist_sub_dir": "pydist",
   "source_sub_dir": "",
   "icon_file": None,
+  "verbose": True,
 }
 
 pyvan.build(**OPTIONS)
@@ -84,7 +86,8 @@ build\_dir|dist|the directory in which pyvan will create the stand-alone distrib
 pydist\_sub\_dir|pydist|a sub directory relative to `build_dir` where the stand-alone python distribution will be installed
 source\_sub\_dir|''|a sub directory relative to `build_dir` where the to execute python files will be installed
 input\_dir|'.'|the directory to get the main\_file\_name file from
-icon\_file|None|path to icon file to use for your application executable, doesn't use one by default 
+icon\_file|None|path to icon file to use for your application executable, doesn't use one by default
+verbose|True|Limit the amount of logs you see in the terminal. Show only warnings or errors.
 
 
 

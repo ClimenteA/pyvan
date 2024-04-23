@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pyvan",
-    version="1.2.2",
+    version="1.2.3",
     description="Make runnable desktop apps from your python scripts more easily with pyvan!",
     url="https://github.com/ClimenteA/pyvan",
     author="Climente Alin",
